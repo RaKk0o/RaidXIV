@@ -19,7 +19,7 @@ async def on_ready():
 async def hello(ctx):
     await ctx.send('Salut ! Je suis ton nouveau bot Discord.')
 
-@bot.command(name='help')
+@bot.command(name='heeelp')
 async def hello(ctx):
     await ctx.send('Non.')
 
