@@ -17,22 +17,22 @@ events = {}
 async def on_ready():
     print(f'We have logged in as {bot.user}')
 
-class CreateEventView(View):
-    def __init__(self, ctx):
-        super().__init__()
+class CreateEventSelect(Select):
+    def __init__(self, ctx, options):
         self.ctx = ctx
         self.channel_id = None
+        super().__init__(placeholder="Sélectionnez un canal...", min_values=1, max_values=1, options=options)
 
-    @nextcord.ui.select(
-        placeholder="Sélectionnez un canal...",
-        min_values=1,
-        max_values=1,
-        options=[],
-    )
-    async def select_callback(self, select, interaction: Interaction):
-        self.channel_id = int(select.values[0])
+    async def callback(self, interaction: Interaction):
+        self.channel_id = int(self.values[0])
         await interaction.response.send_message("Canal sélectionné.", ephemeral=True)
-        self.stop()
+        self.view.stop()
+
+class CreateEventView(View):
+    def __init__(self, ctx, options):
+        super().__init__()
+        self.ctx = ctx
+        self.add_item(CreateEventSelect(ctx, options))
 
 @bot.command()
 async def create_event(ctx):
@@ -63,13 +63,12 @@ async def create_event(ctx):
 
     select_options = [SelectOption(label=channel.name, value=str(channel.id)) for channel in channels]
     
-    view = CreateEventView(ctx)
-    view.select_callback.select.options = select_options
+    view = CreateEventView(ctx, select_options)
     
     await ctx.author.send("Sélectionnez le canal où l'événement sera annoncé:", view=view)
     await view.wait()
 
-    if view.channel_id is None:
+    if view.children[0].channel_id is None:
         await ctx.author.send("Aucun canal sélectionné, opération annulée.")
         return
 
@@ -80,13 +79,13 @@ async def create_event(ctx):
         'date': date,
         'time': time,
         'participants': [],
-        'channel_id': view.channel_id
+        'channel_id': view.children[0].channel_id
     }
 
     await ctx.author.send("L'événement a été créé avec succès!")
 
     # Send event to the selected channel
-    channel = bot.get_channel(view.channel_id)
+    channel = bot.get_channel(view.children[0].channel_id)
     embed = nextcord.Embed(title=title, description=description, color=0x00ff00)
     embed.add_field(name="Date", value=date, inline=True)
     embed.add_field(name="Heure", value=time, inline=True)
@@ -123,6 +122,5 @@ async def on_interaction(interaction: Interaction):
             participants = ', '.join([p.name for p in event['participants']])
             embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
             await message.edit(embed=embed)
-
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
