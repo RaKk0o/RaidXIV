@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-load.dotenv()
+load_dotenv()
 
 intents = discord.Intents.default()
 intents.messages = True
