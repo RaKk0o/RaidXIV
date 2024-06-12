@@ -7,6 +7,7 @@ import os
 intents = nextcord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.presences = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
