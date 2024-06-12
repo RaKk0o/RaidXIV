@@ -102,20 +102,19 @@ async def create_event(ctx):
 @bot.event
 async def on_interaction(interaction: Interaction):
     if interaction.type == nextcord.InteractionType.component:
-        await interaction.response.defer(ephemeral=True)
         event_id = interaction.data['custom_id']
         event = events.get(event_id)
 
         if not event:
-            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
+            await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
             return
 
         user = interaction.user
         if user in event['participants']:
-            await interaction.followup.send("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
+            await interaction.response.send_message("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
         else:
             event['participants'].append(user)
-            await interaction.followup.send("Vous vous êtes inscrit à l'événement!", ephemeral=True)
+            await interaction.response.send_message("Vous vous êtes inscrit à l'événement!", ephemeral=True)
 
             # Mettre à jour l'embed avec les participants
             channel = bot.get_channel(interaction.message.channel.id)
@@ -125,6 +124,6 @@ async def on_interaction(interaction: Interaction):
             participants = ', '.join([p.name for p in event['participants']])
             embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
             await message.edit(embed=embed)
-            
+
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
