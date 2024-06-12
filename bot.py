@@ -35,6 +35,35 @@ class CreateEventView(View):
         self.ctx = ctx
         self.add_item(CreateEventSelect(ctx, options))
 
+class RegisterButton(Button):
+    def __init__(self, event_id):
+        super().__init__(style=ButtonStyle.green, label="S'inscrire", custom_id=event_id)
+        self.event_id = event_id
+
+    async def callback(self, interaction: Interaction):
+        await interaction.response.defer(ephemeral=True)
+        event = events.get(self.event_id)
+
+        if not event:
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
+            return
+
+        user = interaction.user
+        if user in event['participants']:
+            await interaction.followup.send("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
+        else:
+            event['participants'].append(user)
+            await interaction.followup.send("Vous vous êtes inscrit à l'événement!", ephemeral=True)
+
+            # Mettre à jour l'embed avec les participants
+            channel = bot.get_channel(event['channel_id'])
+            message = await channel.fetch_message(event['message_id'])
+
+            embed = message.embeds[0]
+            participants = ', '.join([p.name for p in event['participants']])
+            embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
+            await message.edit(embed=embed)
+
 @bot.command()
 async def create_event(ctx):
     if isinstance(ctx.channel, nextcord.DMChannel):
@@ -93,37 +122,11 @@ async def create_event(ctx):
     embed.add_field(name="Inscriptions", value="Aucun pour le moment.", inline=False)
 
     view = View()
-    button = Button(style=ButtonStyle.green, label="S'inscrire", custom_id=event_id)
+    button = RegisterButton(event_id)
     view.add_item(button)
 
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
-
-@bot.event
-async def on_interaction(interaction: Interaction):
-    if interaction.type == nextcord.InteractionType.component:
-        event_id = interaction.data['custom_id']
-        event = events.get(event_id)
-
-        if not event:
-            await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
-            return
-
-        user = interaction.user
-        if user in event['participants']:
-            await interaction.response.send_message("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
-        else:
-            event['participants'].append(user)
-            await interaction.response.send_message("Vous vous êtes inscrit à l'événement!", ephemeral=True)
-
-            # Mettre à jour l'embed avec les participants
-            channel = bot.get_channel(interaction.message.channel.id)
-            message = await channel.fetch_message(event['message_id'])
-
-            embed = message.embeds[0]
-            participants = ', '.join([p.name for p in event['participants']])
-            embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
-            await message.edit(embed=embed)
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
