@@ -19,5 +19,9 @@ async def on_ready():
 async def hello(ctx):
     await ctx.send('Salut ! Je suis ton nouveau bot Discord.')
 
+@bot.command(name='help')
+async def hello(ctx):
+    await ctx.send('Non.')
+
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
