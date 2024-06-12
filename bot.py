@@ -2,8 +2,11 @@ import os
 import discord
 from discord.ext import commands
 
+load.dotenv()
+
 intents = discord.Intents.default()
 intents.messages = True
+intents.messages_content = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
