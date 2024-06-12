@@ -101,7 +101,7 @@ async def create_event(ctx):
 @bot.event
 async def on_interaction(interaction: Interaction):
     if interaction.type == nextcord.InteractionType.component:
-        event_id = int(interaction.custom_id)
+        event_id = int(interaction.data['custom_id'])
         event = events.get(event_id)
 
         if not event:
