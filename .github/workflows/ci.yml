@@ -28,4 +28,4 @@ jobs:
         DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
       run: |
         echo "Starting bot..."
-        python bot.py
+        python test_bot.py
