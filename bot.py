@@ -3,6 +3,7 @@ import nextcord
 from nextcord.ext import commands
 from nextcord import SelectOption, Interaction, ButtonStyle
 from nextcord.ui import Button, View, Select
+import uuid
 
 intents = nextcord.Intents.default()
 intents.message_content = True
@@ -72,7 +73,7 @@ async def create_event(ctx):
         await ctx.author.send("Aucun canal sélectionné, opération annulée.")
         return
 
-    event_id = len(events) + 1
+    event_id = str(uuid.uuid4())
     events[event_id] = {
         'title': title,
         'description': description,
@@ -92,7 +93,7 @@ async def create_event(ctx):
     embed.add_field(name="Inscriptions", value="Aucun pour le moment.", inline=False)
 
     view = View()
-    button = Button(style=ButtonStyle.green, label="S'inscrire", custom_id=str(event_id))
+    button = Button(style=ButtonStyle.green, label="S'inscrire", custom_id=event_id)
     view.add_item(button)
 
     message = await channel.send(embed=embed, view=view)
@@ -101,7 +102,7 @@ async def create_event(ctx):
 @bot.event
 async def on_interaction(interaction: Interaction):
     if interaction.type == nextcord.InteractionType.component:
-        event_id = int(interaction.data['custom_id'])
+        event_id = interaction.data['custom_id']
         event = events.get(event_id)
 
         if not event:
