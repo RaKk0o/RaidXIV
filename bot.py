@@ -106,19 +106,17 @@ async def on_interaction(interaction: Interaction):
         event = events.get(event_id)
 
         if not event:
-            await interaction.response.defer(ephemeral=True)
-            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
+            await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
             return
 
         user = interaction.user
         if user in event['participants']:
-            await interaction.response.defer(ephemeral=True)
-            await interaction.followup.send("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
+            await interaction.response.send_message("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
         else:
             event['participants'].append(user)
-            await interaction.response.defer(ephemeral=True)
-            await interaction.followup.send("Vous vous êtes inscrit à l'événement!", ephemeral=True)
+            await interaction.response.send_message("Vous vous êtes inscrit à l'événement!", ephemeral=True)
 
+            # Mettre à jour l'embed avec les participants
             channel = bot.get_channel(interaction.message.channel.id)
             message = await channel.fetch_message(event['message_id'])
 
