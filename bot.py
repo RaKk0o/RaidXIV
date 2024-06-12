@@ -1,13 +1,13 @@
-import discord
-from discord.ext import commands
-from discord_components import DiscordComponents, Button, ButtonStyle, Select, SelectOption
+import nextcord
+from nextcord.ext import commands
+from nextcord import SelectOption, Interaction, ButtonStyle
+from nextcord.ui import Button, View, Select
 
-intents = discord.Intents.default()
+intents = nextcord.Intents.default()
 intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
-DiscordComponents(bot)
 
 # Dictionary to store event information
 events = {}
@@ -16,14 +16,31 @@ events = {}
 async def on_ready():
     print(f'We have logged in as {bot.user}')
 
+class CreateEventView(View):
+    def __init__(self, ctx):
+        super().__init__()
+        self.ctx = ctx
+        self.channel_id = None
+
+    @nextcord.ui.select(
+        placeholder="Sélectionnez un canal...",
+        min_values=1,
+        max_values=1,
+        options=[],
+    )
+    async def select_callback(self, select, interaction: Interaction):
+        self.channel_id = int(select.values[0])
+        await interaction.response.send_message("Canal sélectionné.", ephemeral=True)
+        self.stop()
+
 @bot.command()
 async def create_event(ctx):
-    if not isinstance(ctx.channel, discord.DMChannel):
+    if not isinstance(ctx.channel, nextcord.DMChannel):
         await ctx.send("Veuillez créer l'événement en message privé.")
         return
     
     def check(m):
-        return m.author == ctx.author and isinstance(m.channel, discord.DMChannel)
+        return m.author == ctx.author and isinstance(m.channel, nextcord.DMChannel)
 
     await ctx.send("Entrez le titre de l'événement:")
     title = (await bot.wait_for('message', check=check)).content
@@ -42,14 +59,16 @@ async def create_event(ctx):
     channels = guild.text_channels
 
     select_options = [SelectOption(label=channel.name, value=str(channel.id)) for channel in channels]
-    await ctx.send("Sélectionnez le canal où l'événement sera annoncé:", components=[
-        Select(placeholder="Sélectionnez un canal...", options=select_options)
-    ])
+    
+    view = CreateEventView(ctx)
+    view.select_callback.select.options = select_options
+    
+    await ctx.send("Sélectionnez le canal où l'événement sera annoncé:", view=view)
+    await view.wait()
 
-    interaction = await bot.wait_for("select_option", check=lambda i: i.user.id == ctx.author.id)
-    channel_id = int(interaction.values[0])
-
-    await interaction.send("Canal sélectionné.")
+    if view.channel_id is None:
+        await ctx.send("Aucun canal sélectionné, opération annulée.")
+        return
 
     event_id = len(events) + 1
     events[event_id] = {
@@ -58,45 +77,48 @@ async def create_event(ctx):
         'date': date,
         'time': time,
         'participants': [],
-        'channel_id': channel_id
+        'channel_id': view.channel_id
     }
 
     await ctx.send("L'événement a été créé avec succès!")
 
     # Send event to the selected channel
-    channel = bot.get_channel(channel_id)
-    embed = discord.Embed(title=title, description=description, color=0x00ff00)
+    channel = bot.get_channel(view.channel_id)
+    embed = nextcord.Embed(title=title, description=description, color=0x00ff00)
     embed.add_field(name="Date", value=date, inline=True)
     embed.add_field(name="Heure", value=time, inline=True)
     embed.add_field(name="Inscriptions", value="Aucun pour le moment.", inline=False)
 
-    message = await channel.send(embed=embed, components=[Button(style=ButtonStyle.green, label="S'inscrire", custom_id=str(event_id))])
+    view = View()
+    button = Button(style=ButtonStyle.green, label="S'inscrire", custom_id=str(event_id))
+    view.add_item(button)
 
+    message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
 
 @bot.event
-async def on_button_click(interaction):
-    event_id = int(interaction.custom_id)
-    event = events.get(event_id)
+async def on_interaction(interaction: Interaction):
+    if interaction.type == nextcord.InteractionType.component:
+        event_id = int(interaction.custom_id)
+        event = events.get(event_id)
 
-    if not event:
-        await interaction.send("Cet événement n'existe pas.")
-        return
+        if not event:
+            await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
+            return
 
-    user = interaction.user
-    if user in event['participants']:
-        await interaction.send("Vous êtes déjà inscrit à cet événement.")
-    else:
-        event['participants'].append(user)
-        await interaction.send("Vous vous êtes inscrit à l'événement!")
+        user = interaction.user
+        if user in event['participants']:
+            await interaction.response.send_message("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
+        else:
+            event['participants'].append(user)
+            await interaction.response.send_message("Vous vous êtes inscrit à l'événement!", ephemeral=True)
 
-        channel = bot.get_channel(interaction.message.channel.id)
-        message = await channel.fetch_message(event['message_id'])
+            channel = bot.get_channel(interaction.message.channel.id)
+            message = await channel.fetch_message(event['message_id'])
 
-        embed = message.embeds[0]
-        participants = ', '.join([p.name for p in event['participants']])
-        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
-        await message.edit(embed=embed)
-        
-token = os.getenv('DISCORD_TOKEN')
-bot.run(token)
+            embed = message.embeds[0]
+            participants = ', '.join([p.name for p in event['participants']])
+            embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
+            await message.edit(embed=embed)
+
+bot.run('YOUR_BOT_TOKEN')
