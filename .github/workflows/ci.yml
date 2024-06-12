@@ -6,15 +6,24 @@ on:
       - main
 
 jobs:
+  cancel_previous:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
   build:
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4.1.6
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5.1.0
       with:
         python-version: '3.x'
 
@@ -26,7 +35,6 @@ jobs:
     - name: Run bot
       env:
         DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-        NILS_ID: ${{ secrets.NILS_ID }}
       run: |
         echo "Starting bot..."
         python bot.py
