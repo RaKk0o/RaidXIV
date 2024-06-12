@@ -9,6 +9,8 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 
+USER_ID = os.getenv('NILS_ID')
+
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
@@ -22,6 +24,13 @@ async def hello(ctx):
 @bot.command(name='heeelp')
 async def hello(ctx):
     await ctx.send('Non.')
+
+@bot.event
+async def on_message(message):
+    if message.author.id == USER_ID:
+        await message.channel.send(f"{message.author.display_name} dans le doute ta gueule.")
+
+    await bot.process_commands(message)
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
