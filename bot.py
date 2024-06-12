@@ -1,13 +1,12 @@
+import os
 import nextcord
 from nextcord.ext import commands
 from nextcord import SelectOption, Interaction, ButtonStyle
 from nextcord.ui import Button, View, Select
-import os
 
 intents = nextcord.Intents.default()
 intents.message_content = True
 intents.members = True
-intents.presences = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
@@ -37,23 +36,25 @@ class CreateEventView(View):
 
 @bot.command()
 async def create_event(ctx):
-    if not isinstance(ctx.channel, nextcord.DMChannel):
-        await ctx.send("Veuillez créer l'événement en message privé.")
+    if isinstance(ctx.channel, nextcord.DMChannel):
+        await ctx.send("Veuillez créer l'événement en envoyant la commande dans un canal du serveur.")
         return
+    
+    await ctx.author.send("Nous allons configurer votre événement. Veuillez répondre aux questions suivantes.")
     
     def check(m):
         return m.author == ctx.author and isinstance(m.channel, nextcord.DMChannel)
 
-    await ctx.send("Entrez le titre de l'événement:")
+    await ctx.author.send("Entrez le titre de l'événement:")
     title = (await bot.wait_for('message', check=check)).content
 
-    await ctx.send("Entrez la description de l'événement:")
+    await ctx.author.send("Entrez la description de l'événement:")
     description = (await bot.wait_for('message', check=check)).content
 
-    await ctx.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
+    await ctx.author.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
     date = (await bot.wait_for('message', check=check)).content
 
-    await ctx.send("Entrez l'heure de l'événement (format: HH:MM):")
+    await ctx.author.send("Entrez l'heure de l'événement (format: HH:MM):")
     time = (await bot.wait_for('message', check=check)).content
 
     # Get list of channels
@@ -65,11 +66,11 @@ async def create_event(ctx):
     view = CreateEventView(ctx)
     view.select_callback.select.options = select_options
     
-    await ctx.send("Sélectionnez le canal où l'événement sera annoncé:", view=view)
+    await ctx.author.send("Sélectionnez le canal où l'événement sera annoncé:", view=view)
     await view.wait()
 
     if view.channel_id is None:
-        await ctx.send("Aucun canal sélectionné, opération annulée.")
+        await ctx.author.send("Aucun canal sélectionné, opération annulée.")
         return
 
     event_id = len(events) + 1
@@ -82,7 +83,7 @@ async def create_event(ctx):
         'channel_id': view.channel_id
     }
 
-    await ctx.send("L'événement a été créé avec succès!")
+    await ctx.author.send("L'événement a été créé avec succès!")
 
     # Send event to the selected channel
     channel = bot.get_channel(view.channel_id)
