@@ -2,6 +2,7 @@ import nextcord
 from nextcord.ext import commands
 from nextcord import SelectOption, Interaction, ButtonStyle
 from nextcord.ui import Button, View, Select
+import os
 
 intents = nextcord.Intents.default()
 intents.message_content = True
