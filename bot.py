@@ -121,4 +121,5 @@ async def on_interaction(interaction: Interaction):
             embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
             await message.edit(embed=embed)
 
-bot.run('YOUR_BOT_TOKEN')
+token = os.getenv('DISCORD_TOKEN')
+bot.run(token)
