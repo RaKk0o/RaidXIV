@@ -1,7 +1,7 @@
 import os
 import nextcord
 from nextcord.ext import commands
-from nextcord import SlashOption, Interaction, ButtonStyle
+from nextcord import Interaction, ButtonStyle, SlashOption, SlashCommandOptionChoice
 from nextcord.ui import Button, View, Select
 import uuid
 import logging
@@ -13,7 +13,7 @@ intents = nextcord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(command_prefix='/', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Dictionary to store event information
 events = {}
@@ -190,7 +190,7 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
         event['title'] = new_title
 
     await interaction.user.send("Entrez la nouvelle description de l'événement (ou laissez vide pour ne pas changer):")
-    new_description = (await bot.wait_for('message', check=check)).content
+    new_description = (await bot.wait_for('message', check=check)).content 
     if new_description:
         event['description'] = new_description
 
@@ -222,7 +222,7 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
 @modify_event.on_autocomplete("event_id")
 async def autocomplete_event_id(interaction: Interaction, value: str):
     choices = [
-        nextcord.SlashCommandOptionChoice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
+        SlashCommandOptionChoice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
         for event_id, event in events.items() if value.lower() in event['title'].lower() or value.lower() in event_id
     ]
     await interaction.response.send_autocomplete(choices)
