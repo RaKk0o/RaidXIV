@@ -37,35 +37,46 @@ class CreateEventView(View):
         super().__init__()
         self.add_item(CreateEventSelect(options))
 
-class RegisterButton(Button):
+class PresenceButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.green, label="S'inscrire", custom_id=f"register_{event_id}")
+        super().__init__(style=discord.ButtonStyle.green, label="Présence", custom_id=f"presence_{event_id}")
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        await self.handle_registration(interaction)
+        await self.handle_presence(interaction)
 
-    async def handle_registration(self, interaction):
+    async def handle_presence(self, interaction):
         event = events.get(self.event_id)
         if not event:
             await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
             return
 
         user = interaction.user
-        if user in event['participants']:
-            await interaction.followup.send("Vous êtes déjà inscrit à cet événement.", ephemeral=True)
-        else:
-            event['participants'].append(user)
-            await interaction.followup.send("Vous vous êtes inscrit à l'événement!", ephemeral=True)
-            await self.update_event_message(event)
+
+        # Remove user from other lists
+        event['absences'].remove(user) if user in event['absences'] else None
+        event['maybes'].remove(user) if user in event['maybes'] else None
+        event['replacements'].remove(user) if user in event['replacements'] else None
+        event['participants'].append(user) if user not in event['participants'] else None
+
+        await interaction.followup.send("Votre présence a été enregistrée.", ephemeral=True)
+        await self.update_event_message(event)
 
     async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = message.embeds[0]
+
         participants = ', '.join([p.name for p in event['participants']])
+        absences = ', '.join([p.name for p in event['absences']])
+        maybes = ', '.join([p.name for p in event['maybes']])
+        replacements = ', '.join([p.name for p in event['replacements']])
+
         embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
+        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
 
 class AbsenceButton(Button):
@@ -84,21 +95,31 @@ class AbsenceButton(Button):
             return
 
         user = interaction.user
-        if user in event['absences']:
-            await interaction.followup.send("Vous avez déjà marqué votre absence pour cet événement.", ephemeral=True)
-        else:
-            event['absences'].append(user)
-            await interaction.followup.send("Votre absence a été enregistrée.", ephemeral=True)
-            await self.update_event_message(event, 'absences')
 
-    async def update_event_message(self, event, field):
+        # Remove user from other lists
+        event['participants'].remove(user) if user in event['participants'] else None
+        event['maybes'].remove(user) if user in event['maybes'] else None
+        event['replacements'].remove(user) if user in event['replacements'] else None
+        event['absences'].append(user) if user not in event['absences'] else None
+
+        await interaction.followup.send("Votre absence a été enregistrée.", ephemeral=True)
+        await self.update_event_message(event)
+
+    async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = message.embeds[0]
-        absences = ', '.join([p.name for p in event[field]])
-        embed.set_field_at(3, name="Absences", value=absences, inline=False)
-        await message.edit(embed=embed)
 
+        participants = ', '.join([p.name for p in event['participants']])
+        absences = ', '.join([p.name for p in event['absences']])
+        maybes = ', '.join([p.name for p in event['maybes']])
+        replacements = ', '.join([p.name for p in event['replacements']])
+
+        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
+        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
+        await message.edit(embed=embed)
 
 class MaybeButton(Button):
     def __init__(self, event_id):
@@ -116,19 +137,30 @@ class MaybeButton(Button):
             return
 
         user = interaction.user
-        if user in event['maybes']:
-            await interaction.followup.send("Vous avez déjà marqué peut-être pour cet événement.", ephemeral=True)
-        else:
-            event['maybes'].append(user)
-            await interaction.followup.send("Votre réponse 'peut-être' a été enregistrée.", ephemeral=True)
-            await self.update_event_message(event, 'maybes')
 
-    async def update_event_message(self, event, field):
+        # Remove user from other lists
+        event['participants'].remove(user) if user in event['participants'] else None
+        event['absences'].remove(user) if user in event['absences'] else None
+        event['replacements'].remove(user) if user in event['replacements'] else None
+        event['maybes'].append(user) if user not in event['maybes'] else None
+
+        await interaction.followup.send("Votre réponse 'peut-être' a été enregistrée.", ephemeral=True)
+        await self.update_event_message(event)
+
+    async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = message.embeds[0]
-        maybes = ', '.join([p.name for p in event[field]])
-        embed.set_field_at(4, name="Peut-être", value=maybes, inline=False)
+
+        participants = ', '.join([p.name for p in event['participants']])
+        absences = ', '.join([p.name for p in event['absences']])
+        maybes = ', '.join([p.name for p in event['maybes']])
+        replacements = ', '.join([p.name for p in event['replacements']])
+
+        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
+        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
 
 
@@ -148,19 +180,30 @@ class ReplacementButton(Button):
             return
 
         user = interaction.user
-        if user in event['replacements']:
-            await interaction.followup.send("Vous avez déjà marqué votre disponibilité comme remplacement pour cet événement.", ephemeral=True)
-        else:
-            event['replacements'].append(user)
-            await interaction.followup.send("Votre disponibilité comme remplacement a été enregistrée.", ephemeral=True)
-            await self.update_event_message(event, 'replacements')
 
-    async def update_event_message(self, event, field):
+        # Remove user from other lists
+        event['participants'].remove(user) if user in event['participants'] else None
+        event['absences'].remove(user) if user in event['absences'] else None
+        event['maybes'].remove(user) if user in event['maybes'] else None
+        event['replacements'].append(user) if user not in event['replacements'] else None
+
+        await interaction.followup.send("Votre disponibilité comme remplacement a été enregistrée.", ephemeral=True)
+        await self.update_event_message(event)
+
+    async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = message.embeds[0]
-        replacements = ', '.join([p.name for p in event[field]])
-        embed.set_field_at(5, name="Remplacements", value=replacements, inline=False)
+
+        participants = ', '.join([p.name for p in event['participants']])
+        absences = ', '.join([p.name for p in event['absences']])
+        maybes = ', '.join([p.name for p in event['maybes']])
+        replacements = ', '.join([p.name for p in event['replacements']])
+
+        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
+        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
+        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
 
 
