@@ -120,7 +120,7 @@ class UnregisterButton(Button):
         logging.info(f"{interaction.user.name} unregistered from event {self.event_id}")
 
 
-@client.tree.command(name="create_event", description="Créer un nouvel événement")
+@client.slash_command(name="create_event", description="Créer un nouvel événement")
 async def create_event(interaction: Interaction):
     logging.info(f"Creating event command invoked by {interaction.user.name}")
     
@@ -187,7 +187,7 @@ async def create_event(interaction: Interaction):
     logging.info(f"Event {event_id} announced in channel {channel_id}")
 
 
-@client.tree.command(name="modify_event", description="Modifier un événement existant")
+@client.slash_command(name="modify_event", description="Modifier un événement existant")
 async def modify_event(interaction: Interaction, event_id: str):
     logging.info(f"Modifying event {event_id} command invoked by {interaction.user.name}")
     event = events.get(event_id)
