@@ -6,7 +6,6 @@ from discord.ui import Button, View, Select
 import uuid
 import logging
 
-# Configurer le logging
 logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.default()
@@ -100,6 +99,10 @@ class UnregisterButton(Button):
         embed.set_field_at(2, name="Inscriptions", value=participants if participants else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
 
+##########################################################
+# Create Event
+##########################################################
+
 @bot.tree.command(name="create_event", description="Créer un nouvel événement")
 async def create_event(interaction: discord.Interaction):
     if isinstance(interaction.channel, discord.DMChannel):
@@ -166,6 +169,10 @@ async def create_event(interaction: discord.Interaction):
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
     await interaction.followup.send("L'événement a été annoncé dans le canal sélectionné.", ephemeral=True)
+
+##########################################################
+# Edit Event
+##########################################################
 
 @bot.tree.command(name="edit_event", description="Éditer un événement")
 @app_commands.describe(event_id="L'identifiant de l'événement à modifier")
