@@ -44,6 +44,7 @@ class RegisterButton(Button):
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         await self.handle_registration(interaction)
 
     async def handle_registration(self, interaction):
@@ -74,6 +75,7 @@ class UnregisterButton(Button):
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         await self.handle_unregistration(interaction)
 
     async def handle_unregistration(self, interaction):
@@ -104,6 +106,7 @@ async def create_event(interaction: discord.Interaction):
         await interaction.response.send_message("Veuillez créer l'événement en envoyant la commande dans un canal du serveur.", ephemeral=True)
         return
 
+    await interaction.response.defer(ephemeral=True)
     await interaction.user.send("Nous allons configurer votre événement. Veuillez répondre aux questions suivantes.")
     
     def check(m):
@@ -159,6 +162,7 @@ async def create_event(interaction: discord.Interaction):
 
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
+    await interaction.followup.send("L'événement a été annoncé dans le canal sélectionné.", ephemeral=True)
 
 @bot.tree.command(name="modify_event", description="Modifier un événement existant")
 async def modify_event(interaction: discord.Interaction, event_id: str):
@@ -171,6 +175,7 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
         await interaction.response.send_message("Vous n'avez pas la permission de modifier cet événement.", ephemeral=True)
         return
 
+    await interaction.response.defer(ephemeral=True)
     await interaction.user.send("Nous allons modifier votre événement. Veuillez répondre aux questions suivantes.")
     
     def check(m):
@@ -207,6 +212,7 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
     embed.set_field_at(0, name="Date", value=event['date'], inline=True)
     embed.set_field_at(1, name="Heure", value=event['time'], inline=True)
     await message.edit(embed=embed)
+    await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
