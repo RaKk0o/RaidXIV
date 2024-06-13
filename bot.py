@@ -147,7 +147,8 @@ async def create_event(ctx):
         'date': date,
         'time': time,
         'participants': [],
-        'channel_id': view.children[0].channel_id
+        'channel_id': view.children[0].channel_id,
+        'organizer': ctx.author.id
     }
 
     await ctx.author.send("L'événement a été créé avec succès!")
@@ -176,7 +177,7 @@ async def modify_event(ctx, event_id: str):
         await ctx.send("Cet événement n'existe pas.")
         return
 
-    if ctx.author != ctx.guild.get_member(event['organizer']):
+    if ctx.author.id != event['organizer']:
         await ctx.send("Vous n'avez pas la permission de modifier cet événement.")
         return
 
