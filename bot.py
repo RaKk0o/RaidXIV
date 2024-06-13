@@ -165,6 +165,7 @@ async def create_event(interaction: discord.Interaction):
     await interaction.followup.send("L'événement a été annoncé dans le canal sélectionné.", ephemeral=True)
 
 @bot.tree.command(name="modify_event", description="Modifier un événement existant")
+@app_commands.describe(event_id="L'identifiant de l'événement à modifier")
 async def modify_event(interaction: discord.Interaction, event_id: str):
     event = events.get(event_id)
     if not event:
@@ -213,6 +214,37 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
     embed.set_field_at(1, name="Heure", value=event['time'], inline=True)
     await message.edit(embed=embed)
     await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
+
+@bot.tree.command(name="edit_event", description="Éditer un événement")
+async def edit_event(interaction: discord.Interaction):
+    if not events:
+        await interaction.response.send_message("Il n'y a pas d'événements à éditer.", ephemeral=True)
+        return
+
+    event_options = [
+        discord.SelectOption(label=f"{event_id} | {event['date']} | {interaction.user.name} | {event['title']}", value=event_id)
+        for event_id, event in events.items()
+    ]
+
+    class EditEventSelect(Select):
+        def __init__(self, options):
+            super().__init__(placeholder="Sélectionnez un événement à éditer...", min_values=1, max_values=1, options=options)
+            self.event_id = None
+
+        async def callback(self, interaction: discord.Interaction):
+            self.event_id = self.values[0]
+            await interaction.response.send_message(f"Événement sélectionné : {self.event_id}", ephemeral=True)
+            self.view.stop()
+
+    view = View()
+    select = EditEventSelect(event_options)
+    view.add_item(select)
+
+    await interaction.response.send_message("Veuillez sélectionner l'événement que vous souhaitez éditer :", view=view)
+    await view.wait()
+
+    if select.event_id is not None:
+        await modify_event(interaction, select.event_id)
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
