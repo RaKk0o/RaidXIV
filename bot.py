@@ -217,11 +217,6 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
 @bot.tree.command(name="edit_event", description="Éditer un événement")
 @app_commands.describe(event_id="L'identifiant de l'événement à modifier")
 async def edit_event(interaction: discord.Interaction, event_id: str):
-    event = events.get(event_id)
-    if not event:
-        await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
-        return
-
     await interaction.response.defer(ephemeral=True)
     await modify_event(interaction, event_id)
 
@@ -230,10 +225,11 @@ async def edit_event_autocomplete(
     interaction: discord.Interaction,
     current: str,
 ) -> list[app_commands.Choice[str]]:
-    return [
+    choices = [
         app_commands.Choice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
-        for event_id, event in events.items() if current.lower() in event_id.lower()
+        for event_id, event in events.items()
     ]
+    return choices
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
