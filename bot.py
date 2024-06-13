@@ -148,6 +148,9 @@ async def create_event(interaction: discord.Interaction):
         'organizer': interaction.user.id
     }
 
+    # Debug: Log event details to ensure it is stored
+    logging.info(f"Event created: {event_id} - {events[event_id]}")
+
     await interaction.user.send("L'événement a été créé avec succès!")
 
     channel = bot.get_channel(channel_id)
