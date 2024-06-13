@@ -216,35 +216,12 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
     await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
 
 @bot.tree.command(name="edit_event", description="Éditer un événement")
-async def edit_event(interaction: discord.Interaction):
-    if not events:
-        await interaction.response.send_message("Il n'y a pas d'événements à éditer.", ephemeral=True)
-        return
-
-    event_options = [
-        discord.SelectOption(label=f"{event_id} | {event['date']} | {interaction.user.name} | {event['title']}", value=event_id)
-        for event_id, event in events.items()
-    ]
-
-    class EditEventSelect(Select):
-        def __init__(self, options):
-            super().__init__(placeholder="Sélectionnez un événement à éditer...", min_values=1, max_values=1, options=options)
-            self.event_id = None
-
-        async def callback(self, interaction: discord.Interaction):
-            self.event_id = self.values[0]
-            await interaction.response.send_message(f"Événement sélectionné : {self.event_id}", ephemeral=True)
-            self.view.stop()
-
-    view = View()
-    select = EditEventSelect(event_options)
-    view.add_item(select)
-
-    await interaction.response.send_message("Veuillez sélectionner l'événement que vous souhaitez éditer :", view=view)
-    await view.wait()
-
-    if select.event_id is not None:
-        await modify_event(interaction, select.event_id)
+@app_commands.choices(event_id=[
+    app_commands.Choice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
+    for event_id, event in events.items()
+])
+async def edit_event(interaction: discord.Interaction, event_id: str):
+    await modify_event(interaction, event_id)
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
