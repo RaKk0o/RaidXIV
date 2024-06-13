@@ -15,6 +15,9 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+# Dictionary to store event information
+events = {}
+
 @bot.event
 async def on_ready():
     logging.info(f'We have logged in as {bot.user}')
@@ -95,7 +98,6 @@ class UnregisterButton(Button):
         embed.set_field_at(2, name="Inscriptions", value=participants if participants else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
 
-
 @bot.tree.command(name="create_event", description="Créer un nouvel événement")
 async def create_event(interaction: discord.Interaction):
     if isinstance(interaction.channel, discord.DMChannel):
@@ -158,7 +160,6 @@ async def create_event(interaction: discord.Interaction):
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
 
-
 @bot.tree.command(name="modify_event", description="Modifier un événement existant")
 async def modify_event(interaction: discord.Interaction, event_id: str):
     event = events.get(event_id)
@@ -206,7 +207,6 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
     embed.set_field_at(0, name="Date", value=event['date'], inline=True)
     embed.set_field_at(1, name="Heure", value=event['time'], inline=True)
     await message.edit(embed=embed)
-
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
