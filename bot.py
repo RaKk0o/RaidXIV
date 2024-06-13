@@ -1,45 +1,30 @@
 import os
 import nextcord
 from nextcord.ext import commands
-from nextcord import Interaction, ButtonStyle, SlashOption, SelectOption, Embed, Member, Message
+from nextcord import SelectOption, Interaction, ButtonStyle
 from nextcord.ui import Button, View, Select
 import uuid
 import logging
-from typing import Optional
 
 # Configurer le logging
 logging.basicConfig(level=logging.INFO)
-
-MY_GUILD = nextcord.Object(id=123456789012345678)  # Remplacez par l'ID de votre serveur
-
-class MyClient(nextcord.Client):
-    def __init__(self, *, intents: nextcord.Intents):
-        super().__init__(intents=intents)
-        self.tree = nextcord.app_commands.CommandTree(self)
-
-    async def setup_hook(self):
-        self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync(guild=MY_GUILD)
-
 
 intents = nextcord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-client = MyClient(intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Dictionary to store event information
 events = {}
 
-@client.event
+@bot.event
 async def on_ready():
-    logging.info(f'We have logged in as {client.user} (ID: {client.user.id})')
-    logging.info('------')
-
+    logging.info(f'We have logged in as {bot.user}')
 
 class CreateEventSelect(Select):
-    def __init__(self, interaction: Interaction, options):
-        self.interaction = interaction
+    def __init__(self, ctx, options):
+        self.ctx = ctx
         self.channel_id = None
         super().__init__(placeholder="Sélectionnez un canal...", min_values=1, max_values=1, options=options)
 
@@ -48,13 +33,11 @@ class CreateEventSelect(Select):
         await interaction.response.send_message("Canal sélectionné.", ephemeral=True)
         self.view.stop()
 
-
 class CreateEventView(View):
-    def __init__(self, interaction: Interaction, options):
+    def __init__(self, ctx, options):
         super().__init__()
-        self.interaction = interaction
-        self.add_item(CreateEventSelect(interaction, options))
-
+        self.ctx = ctx
+        self.add_item(CreateEventSelect(ctx, options))
 
 class RegisterButton(Button):
     def __init__(self, event_id):
@@ -78,7 +61,7 @@ class RegisterButton(Button):
             await interaction.followup.send("Vous vous êtes inscrit à l'événement!", ephemeral=True)
 
             # Mettre à jour l'embed avec les participants
-            channel = client.get_channel(event['channel_id'])
+            channel = bot.get_channel(event['channel_id'])
             message = await channel.fetch_message(event['message_id'])
 
             embed = message.embeds[0]
@@ -86,7 +69,6 @@ class RegisterButton(Button):
             embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
             await message.edit(embed=embed)
         logging.info(f"{interaction.user.name} registered for event {self.event_id}")
-
 
 class UnregisterButton(Button):
     def __init__(self, event_id):
@@ -110,7 +92,7 @@ class UnregisterButton(Button):
             await interaction.followup.send("Votre inscription a été annulée.", ephemeral=True)
 
             # Mettre à jour l'embed avec les participants
-            channel = client.get_channel(event['channel_id'])
+            channel = bot.get_channel(event['channel_id'])
             message = await channel.fetch_message(event['message_id'])
 
             embed = message.embeds[0]
@@ -119,41 +101,43 @@ class UnregisterButton(Button):
             await message.edit(embed=embed)
         logging.info(f"{interaction.user.name} unregistered from event {self.event_id}")
 
-
-@client.slash_command(name="create_event", description="Créer un nouvel événement")
-async def create_event(interaction: Interaction):
-    logging.info(f"Creating event command invoked by {interaction.user.name}")
+@bot.command()
+async def create_event(ctx):
+    logging.info(f"Creating event command invoked by {ctx.author.name}")
+    if isinstance(ctx.channel, nextcord.DMChannel):
+        await ctx.send("Veuillez créer l'événement en envoyant la commande dans un canal du serveur.")
+        return
     
-    await interaction.response.send_message("Nous allons configurer votre événement. Veuillez répondre aux questions suivantes.", ephemeral=True)
+    await ctx.author.send("Nous allons configurer votre événement. Veuillez répondre aux questions suivantes.")
     
     def check(m):
-        return m.author == interaction.user and isinstance(m.channel, nextcord.DMChannel)
+        return m.author == ctx.author and isinstance(m.channel, nextcord.DMChannel)
 
-    await interaction.user.send("Entrez le titre de l'événement:")
-    title = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez le titre de l'événement:")
+    title = (await bot.wait_for('message', check=check)).content
 
-    await interaction.user.send("Entrez la description de l'événement:")
-    description = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez la description de l'événement:")
+    description = (await bot.wait_for('message', check=check)).content
 
-    await interaction.user.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
-    date = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
+    date = (await bot.wait_for('message', check=check)).content
 
-    await interaction.user.send("Entrez l'heure de l'événement (format: HH:MM):")
-    time = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez l'heure de l'événement (format: HH:MM):")
+    time = (await bot.wait_for('message', check=check)).content
 
     # Get list of channels
-    guild = interaction.guild
+    guild = ctx.guild
     channels = guild.text_channels
 
     select_options = [SelectOption(label=channel.name, value=str(channel.id)) for channel in channels]
     
-    view = CreateEventView(interaction, select_options)
+    view = CreateEventView(ctx, select_options)
     
-    await interaction.user.send("Sélectionnez le canal où l'événement sera annoncé:", view=view)
+    await ctx.author.send("Sélectionnez le canal où l'événement sera annoncé:", view=view)
     await view.wait()
 
     if view.children[0].channel_id is None:
-        await interaction.user.send("Aucun canal sélectionné, opération annulée.")
+        await ctx.author.send("Aucun canal sélectionné, opération annulée.")
         return
 
     event_id = str(uuid.uuid4())
@@ -165,14 +149,14 @@ async def create_event(interaction: Interaction):
         'time': time,
         'participants': [],
         'channel_id': channel_id,
-        'organizer': interaction.user.id
+        'organizer': ctx.author.id
     }
 
-    await interaction.user.send("L'événement a été créé avec succès!")
-    logging.info(f"Event {event_id} created by {interaction.user.name}")
+    await ctx.author.send("L'événement a été créé avec succès!")
+    logging.info(f"Event {event_id} created by {ctx.author.name}")
 
     # Send event to the selected channel
-    channel = client.get_channel(channel_id)
+    channel = bot.get_channel(channel_id)
     embed = nextcord.Embed(title=title, description=description, color=0x00ff00)
     embed.add_field(name="Date", value=date, inline=True)
     embed.add_field(name="Heure", value=time, inline=True)
@@ -186,49 +170,48 @@ async def create_event(interaction: Interaction):
     events[event_id]['message_id'] = message.id
     logging.info(f"Event {event_id} announced in channel {channel_id}")
 
-
-@client.slash_command(name="modify_event", description="Modifier un événement existant")
-async def modify_event(interaction: Interaction, event_id: str):
-    logging.info(f"Modifying event {event_id} command invoked by {interaction.user.name}")
+@bot.command()
+async def modify_event(ctx, event_id: str):
+    logging.info(f"Modifying event {event_id} command invoked by {ctx.author.name}")
     event = events.get(event_id)
     if not event:
-        await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
+        await ctx.send("Cet événement n'existe pas.")
         return
 
-    if interaction.user.id != event['organizer']:
-        await interaction.response.send_message("Vous n'avez pas la permission de modifier cet événement.", ephemeral=True)
+    if ctx.author.id != event['organizer']:
+        await ctx.send("Vous n'avez pas la permission de modifier cet événement.")
         return
 
-    await interaction.user.send("Nous allons modifier votre événement. Veuillez répondre aux questions suivantes.")
+    await ctx.author.send("Nous allons modifier votre événement. Veuillez répondre aux questions suivantes.")
     
     def check(m):
-        return m.author == interaction.user and isinstance(m.channel, nextcord.DMChannel)
+        return m.author == ctx.author and isinstance(m.channel, nextcord.DMChannel)
 
-    await interaction.user.send("Entrez le nouveau titre de l'événement (ou laissez vide pour ne pas changer):")
-    new_title = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez le nouveau titre de l'événement (ou laissez vide pour ne pas changer):")
+    new_title = (await bot.wait_for('message', check=check)).content
     if new_title:
         event['title'] = new_title
 
-    await interaction.user.send("Entrez la nouvelle description de l'événement (ou laissez vide pour ne pas changer):")
-    new_description = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez la nouvelle description de l'événement (ou laissez vide pour ne pas changer):")
+    new_description = (await bot.wait_for('message', check=check)).content
     if new_description:
         event['description'] = new_description
 
-    await interaction.user.send("Entrez la nouvelle date de l'événement (format: JJ/MM/AAAA) (ou laissez vide pour ne pas changer):")
-    new_date = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez la nouvelle date de l'événement (format: JJ/MM/AAAA) (ou laissez vide pour ne pas changer):")
+    new_date = (await bot.wait_for('message', check=check)).content
     if new_date:
         event['date'] = new_date
 
-    await interaction.user.send("Entrez la nouvelle heure de l'événement (format: HH:MM) (ou laissez vide pour ne pas changer):")
-    new_time = (await client.wait_for('message', check=check)).content
+    await ctx.author.send("Entrez la nouvelle heure de l'événement (format: HH:MM) (ou laissez vide pour ne pas changer):")
+    new_time = (await bot.wait_for('message', check=check)).content
     if new_time:
         event['time'] = new_time
 
-    await interaction.user.send("L'événement a été modifié avec succès!")
-    logging.info(f"Event {event_id} modified by {interaction.user.name}")
+    await ctx.author.send("L'événement a été modifié avec succès!")
+    logging.info(f"Event {event_id} modified by {ctx.author.name}")
 
     # Update the event embed in the channel
-    channel = client.get_channel(event['channel_id'])
+    channel = bot.get_channel(event['channel_id'])
     message = await channel.fetch_message(event['message_id'])
 
     embed = message.embeds[0]
@@ -239,14 +222,5 @@ async def modify_event(interaction: Interaction, event_id: str):
     await message.edit(embed=embed)
     logging.info(f"Event {event_id} embed updated in channel {event['channel_id']}")
 
-
-@modify_event.autocomplete("event_id")
-async def autocomplete_event_id(interaction: Interaction, value: str):
-    choices = [
-        nextcord.app_commands.Choice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
-        for event_id, event in events.items() if value.lower() in event['title'].lower() or value.lower() in event_id
-    ]
-    await interaction.response.send_autocomplete(choices)
-
-
-client.run(os.getenv('DISCORD_TOKEN'))
+token = os.getenv('DISCORD_TOKEN')
+bot.run(token)
