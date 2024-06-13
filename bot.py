@@ -229,8 +229,8 @@ async def edit_event_autocomplete(
     current: str,
 ) -> list[app_commands.Choice[str]]:
     choices = [
-        app_commands.Choice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
-        for event_id, event in events.items()
+        app_commands.Choice(name=f"{event_id} | {event['date']} | {interaction.guild.get_member(event['organizer']).display_name} | {event['title']}", value=event_id)
+        for event_id, event in events.items() if current.lower() in event_id.lower() or current.lower() in event['title'].lower()
     ]
     return choices
 
