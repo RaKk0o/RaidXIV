@@ -167,8 +167,9 @@ async def create_event(interaction: discord.Interaction):
     events[event_id]['message_id'] = message.id
     await interaction.followup.send("L'événement a été annoncé dans le canal sélectionné.", ephemeral=True)
 
-@bot.tree.command(name="modify_event", description="Modifier un événement existant")
-async def modify_event(interaction: discord.Interaction, event_id: str):
+@bot.tree.command(name="edit_event", description="Éditer un événement")
+@app_commands.describe(event_id="L'identifiant de l'événement à modifier")
+async def edit_event(interaction: discord.Interaction, event_id: str):
     event = events.get(event_id)
     if not event:
         await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
@@ -216,12 +217,6 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
     embed.set_field_at(1, name="Heure", value=event['time'], inline=True)
     await message.edit(embed=embed)
     await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
-
-@bot.tree.command(name="edit_event", description="Éditer un événement")
-@app_commands.describe(event_id="L'identifiant de l'événement à modifier")
-async def edit_event(interaction: discord.Interaction, event_id: str):
-    await interaction.response.defer(ephemeral=True)
-    await modify_event(interaction, event_id)
 
 @edit_event.autocomplete("event_id")
 async def edit_event_autocomplete(
