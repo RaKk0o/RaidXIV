@@ -68,6 +68,102 @@ class RegisterButton(Button):
         embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
         await message.edit(embed=embed)
 
+class AbsenceButton(Button):
+    def __init__(self, event_id):
+        super().__init__(style=discord.ButtonStyle.secondary, label="Absence", custom_id=f"absence_{event_id}")
+        self.event_id = event_id
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        await self.handle_absence(interaction)
+
+    async def handle_absence(self, interaction):
+        event = events.get(self.event_id)
+        if not event:
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
+            return
+
+        user = interaction.user
+        if user in event['absences']:
+            await interaction.followup.send("Vous avez déjà marqué votre absence pour cet événement.", ephemeral=True)
+        else:
+            event['absences'].append(user)
+            await interaction.followup.send("Votre absence a été enregistrée.", ephemeral=True)
+            await self.update_event_message(event, 'absences')
+
+    async def update_event_message(self, event, field):
+        channel = bot.get_channel(event['channel_id'])
+        message = await channel.fetch_message(event['message_id'])
+        embed = message.embeds[0]
+        absences = ', '.join([p.name for p in event[field]])
+        embed.set_field_at(3, name="Absences", value=absences, inline=False)
+        await message.edit(embed=embed)
+
+
+class MaybeButton(Button):
+    def __init__(self, event_id):
+        super().__init__(style=discord.ButtonStyle.secondary, label="Peut-être", custom_id=f"maybe_{event_id}")
+        self.event_id = event_id
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        await self.handle_maybe(interaction)
+
+    async def handle_maybe(self, interaction):
+        event = events.get(self.event_id)
+        if not event:
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
+            return
+
+        user = interaction.user
+        if user in event['maybes']:
+            await interaction.followup.send("Vous avez déjà marqué peut-être pour cet événement.", ephemeral=True)
+        else:
+            event['maybes'].append(user)
+            await interaction.followup.send("Votre réponse 'peut-être' a été enregistrée.", ephemeral=True)
+            await self.update_event_message(event, 'maybes')
+
+    async def update_event_message(self, event, field):
+        channel = bot.get_channel(event['channel_id'])
+        message = await channel.fetch_message(event['message_id'])
+        embed = message.embeds[0]
+        maybes = ', '.join([p.name for p in event[field]])
+        embed.set_field_at(4, name="Peut-être", value=maybes, inline=False)
+        await message.edit(embed=embed)
+
+
+class ReplacementButton(Button):
+    def __init__(self, event_id):
+        super().__init__(style=discord.ButtonStyle.secondary, label="Remplacement", custom_id=f"replacement_{event_id}")
+        self.event_id = event_id
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        await self.handle_replacement(interaction)
+
+    async def handle_replacement(self, interaction):
+        event = events.get(self.event_id)
+        if not event:
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
+            return
+
+        user = interaction.user
+        if user in event['replacements']:
+            await interaction.followup.send("Vous avez déjà marqué votre disponibilité comme remplacement pour cet événement.", ephemeral=True)
+        else:
+            event['replacements'].append(user)
+            await interaction.followup.send("Votre disponibilité comme remplacement a été enregistrée.", ephemeral=True)
+            await self.update_event_message(event, 'replacements')
+
+    async def update_event_message(self, event, field):
+        channel = bot.get_channel(event['channel_id'])
+        message = await channel.fetch_message(event['message_id'])
+        embed = message.embeds[0]
+        replacements = ', '.join([p.name for p in event[field]])
+        embed.set_field_at(5, name="Remplacements", value=replacements, inline=False)
+        await message.edit(embed=embed)
+
+
 class UnregisterButton(Button):
     def __init__(self, event_id):
         super().__init__(style=discord.ButtonStyle.red, label="Se désinscrire", custom_id=f"unregister_{event_id}")
@@ -147,6 +243,9 @@ async def create_event(interaction: discord.Interaction):
         'date': date,
         'time': time,
         'participants': [],
+        'absences': [],
+        'maybes': [],
+        'replacements': [],
         'channel_id': channel_id,
         'organizer': interaction.user.id
     }
@@ -161,10 +260,17 @@ async def create_event(interaction: discord.Interaction):
     embed.add_field(name="Date", value=date, inline=True)
     embed.add_field(name="Heure", value=time, inline=True)
     embed.add_field(name="Inscriptions", value="Aucun pour le moment.", inline=False)
+    embed.add_field(name="Absences", value="Aucun pour le moment.", inline=False)
+    embed.add_field(name="Peut-être", value="Aucun pour le moment.", inline=False)
+    embed.add_field(name="Remplacements", value="Aucun pour le moment.", inline=False)
+
 
     view = View()
     view.add_item(RegisterButton(event_id))
     view.add_item(UnregisterButton(event_id))
+    view.add_item(AbsenceButton(event_id))
+    view.add_item(MaybeButton(event_id))
+    view.add_item(ReplacementButton(event_id))
 
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
