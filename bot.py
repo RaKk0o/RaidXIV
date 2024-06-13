@@ -141,13 +141,14 @@ async def create_event(ctx):
         return
 
     event_id = str(uuid.uuid4())
+    channel_id = view.children[0].channel_id
     events[event_id] = {
         'title': title,
         'description': description,
         'date': date,
         'time': time,
         'participants': [],
-        'channel_id': view.children[0].channel_id,
+        'channel_id': channel_id,
         'organizer': ctx.author.id
     }
 
@@ -155,7 +156,7 @@ async def create_event(ctx):
     logging.info(f"Event {event_id} created by {ctx.author.name}")
 
     # Send event to the selected channel
-    channel = bot.get_channel(view.children[0].channel_id)
+    channel = bot.get_channel(channel_id)
     embed = nextcord.Embed(title=title, description=description, color=0x00ff00)
     embed.add_field(name="Date", value=date, inline=True)
     embed.add_field(name="Heure", value=time, inline=True)
@@ -167,7 +168,7 @@ async def create_event(ctx):
 
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
-    logging.info(f"Event {event_id} announced in channel {view.children[0].channel_id}")
+    logging.info(f"Event {event_id} announced in channel {channel_id}")
 
 @bot.command()
 async def modify_event(ctx, event_id: str):
