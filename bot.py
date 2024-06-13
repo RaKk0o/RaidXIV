@@ -37,7 +37,7 @@ class CreateEventView(View):
 
 class RegisterButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=ButtonStyle.green, label="S'inscrire", custom_id=event_id)
+        super().__init__(style=ButtonStyle.green, label="S'inscrire", custom_id=f"register_{event_id}")
         self.event_id = event_id
 
     async def callback(self, interaction: Interaction):
@@ -62,6 +62,35 @@ class RegisterButton(Button):
             embed = message.embeds[0]
             participants = ', '.join([p.name for p in event['participants']])
             embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
+            await message.edit(embed=embed)
+
+class UnregisterButton(Button):
+    def __init__(self, event_id):
+        super().__init__(style=ButtonStyle.red, label="Se désinscrire", custom_id=f"unregister_{event_id}")
+        self.event_id = event_id
+
+    async def callback(self, interaction: Interaction):
+        await interaction.response.defer(ephemeral=True)
+        event = events.get(self.event_id)
+
+        if not event:
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
+            return
+
+        user = interaction.user
+        if user not in event['participants']:
+            await interaction.followup.send("Vous n'êtes pas inscrit à cet événement.", ephemeral=True)
+        else:
+            event['participants'].remove(user)
+            await interaction.followup.send("Votre inscription a été annulée.", ephemeral=True)
+
+            # Mettre à jour l'embed avec les participants
+            channel = bot.get_channel(event['channel_id'])
+            message = await channel.fetch_message(event['message_id'])
+
+            embed = message.embeds[0]
+            participants = ', '.join([p.name for p in event['participants']])
+            embed.set_field_at(2, name="Inscriptions", value=participants if participants else "Aucun pour le moment.", inline=False)
             await message.edit(embed=embed)
 
 @bot.command()
@@ -122,8 +151,8 @@ async def create_event(ctx):
     embed.add_field(name="Inscriptions", value="Aucun pour le moment.", inline=False)
 
     view = View()
-    button = RegisterButton(event_id)
-    view.add_item(button)
+    view.add_item(RegisterButton(event_id))
+    view.add_item(UnregisterButton(event_id))
 
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
