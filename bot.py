@@ -308,8 +308,9 @@ async def create_event(interaction: discord.Interaction):
     embed.add_field(name="Remplacements", value="Aucun pour le moment.", inline=False)
 
 
+
     view = View()
-    view.add_item(RegisterButton(event_id))
+    view.add_item(PresenceButton(event_id))
     view.add_item(UnregisterButton(event_id))
     view.add_item(AbsenceButton(event_id))
     view.add_item(MaybeButton(event_id))
