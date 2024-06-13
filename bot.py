@@ -165,7 +165,6 @@ async def create_event(interaction: discord.Interaction):
     await interaction.followup.send("L'événement a été annoncé dans le canal sélectionné.", ephemeral=True)
 
 @bot.tree.command(name="modify_event", description="Modifier un événement existant")
-@app_commands.describe(event_id="L'identifiant de l'événement à modifier")
 async def modify_event(interaction: discord.Interaction, event_id: str):
     event = events.get(event_id)
     if not event:
@@ -216,12 +215,25 @@ async def modify_event(interaction: discord.Interaction, event_id: str):
     await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
 
 @bot.tree.command(name="edit_event", description="Éditer un événement")
-@app_commands.choices(event_id=[
-    app_commands.Choice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
-    for event_id, event in events.items()
-])
+@app_commands.describe(event_id="L'identifiant de l'événement à modifier")
 async def edit_event(interaction: discord.Interaction, event_id: str):
+    event = events.get(event_id)
+    if not event:
+        await interaction.response.send_message("Cet événement n'existe pas.", ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
     await modify_event(interaction, event_id)
+
+@edit_event.autocomplete("event_id")
+async def edit_event_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    return [
+        app_commands.Choice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
+        for event_id, event in events.items() if current.lower() in event_id.lower()
+    ]
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
