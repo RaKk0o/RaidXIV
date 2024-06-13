@@ -1,7 +1,7 @@
 import os
 import nextcord
 from nextcord.ext import commands
-from nextcord import Interaction, ButtonStyle, SlashOption, SlashCommandOptionChoice
+from nextcord import Interaction, ButtonStyle, SlashOption
 from nextcord.ui import Button, View, Select
 import uuid
 import logging
@@ -21,6 +21,8 @@ events = {}
 @bot.event
 async def on_ready():
     logging.info(f'We have logged in as {bot.user}')
+    await bot.tree.sync()
+    logging.info("Commands synced")
 
 class CreateEventSelect(Select):
     def __init__(self, ctx, options):
@@ -101,11 +103,11 @@ class UnregisterButton(Button):
             await message.edit(embed=embed)
         logging.info(f"{interaction.user.name} unregistered from event {self.event_id}")
 
-@bot.slash_command(name="create_event", description="Créer un nouvel événement")
+@bot.tree.command(name="create_event", description="Créer un nouvel événement")
 async def create_event(interaction: Interaction):
     logging.info(f"Creating event command invoked by {interaction.user.name}")
     
-    await interaction.user.send("Nous allons configurer votre événement. Veuillez répondre aux questions suivantes.")
+    await interaction.response.send_message("Nous allons configurer votre événement. Veuillez répondre aux questions suivantes.", ephemeral=True)
     
     def check(m):
         return m.author == interaction.user and isinstance(m.channel, nextcord.DMChannel)
@@ -126,7 +128,7 @@ async def create_event(interaction: Interaction):
     guild = interaction.guild
     channels = guild.text_channels
 
-    select_options = [SelectOption(label=channel.name, value=str(channel.id)) for channel in channels]
+    select_options = [nextcord.SelectOption(label=channel.name, value=str(channel.id)) for channel in channels]
     
     view = CreateEventView(interaction, select_options)
     
@@ -167,7 +169,7 @@ async def create_event(interaction: Interaction):
     events[event_id]['message_id'] = message.id
     logging.info(f"Event {event_id} announced in channel {channel_id}")
 
-@bot.slash_command(name="modify_event", description="Modifier un événement existant")
+@bot.tree.command(name="modify_event", description="Modifier un événement existant")
 async def modify_event(interaction: Interaction, event_id: str = SlashOption(name="event_id", description="ID de l'événement", required=True, autocomplete=True)):
     logging.info(f"Modifying event {event_id} command invoked by {interaction.user.name}")
     event = events.get(event_id)
@@ -190,7 +192,7 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
         event['title'] = new_title
 
     await interaction.user.send("Entrez la nouvelle description de l'événement (ou laissez vide pour ne pas changer):")
-    new_description = (await bot.wait_for('message', check=check)).content 
+    new_description = (await bot.wait_for('message', check=check)).content
     if new_description:
         event['description'] = new_description
 
@@ -219,10 +221,10 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
     await message.edit(embed=embed)
     logging.info(f"Event {event_id} embed updated in channel {event['channel_id']}")
 
-@modify_event.on_autocomplete("event_id")
+@modify_event.autocomplete("event_id")
 async def autocomplete_event_id(interaction: Interaction, value: str):
     choices = [
-        SlashCommandOptionChoice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
+        nextcord.SlashOptionChoice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
         for event_id, event in events.items() if value.lower() in event['title'].lower() or value.lower() in event_id
     ]
     await interaction.response.send_autocomplete(choices)
