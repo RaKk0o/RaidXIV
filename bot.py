@@ -1,7 +1,7 @@
 import os
 import nextcord
 from nextcord.ext import commands
-from nextcord import Interaction, ButtonStyle, SlashOption
+from nextcord import Interaction, ButtonStyle, SlashOption, SelectOption
 from nextcord.ui import Button, View, Select
 import uuid
 import logging
@@ -21,8 +21,11 @@ events = {}
 @bot.event
 async def on_ready():
     logging.info(f'We have logged in as {bot.user}')
-    await bot.tree.sync()
-    logging.info("Commands synced")
+    try:
+        synced = await bot.tree.sync()
+        logging.info(f"Synced {len(synced)} commands")
+    except Exception as e:
+        logging.error(f"Failed to sync commands: {e}")
 
 class CreateEventSelect(Select):
     def __init__(self, ctx, options):
@@ -128,7 +131,7 @@ async def create_event(interaction: Interaction):
     guild = interaction.guild
     channels = guild.text_channels
 
-    select_options = [nextcord.SelectOption(label=channel.name, value=str(channel.id)) for channel in channels]
+    select_options = [SelectOption(label=channel.name, value=str(channel.id)) for channel in channels]
     
     view = CreateEventView(interaction, select_options)
     
@@ -224,7 +227,7 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
 @modify_event.autocomplete("event_id")
 async def autocomplete_event_id(interaction: Interaction, value: str):
     choices = [
-        nextcord.SlashOptionChoice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
+        nextcord.app_commands.Choice(name=f"{event_id} | {event['date']} | {event['title']}", value=event_id)
         for event_id, event in events.items() if value.lower() in event['title'].lower() or value.lower() in event_id
     ]
     await interaction.response.send_autocomplete(choices)
