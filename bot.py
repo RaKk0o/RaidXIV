@@ -1,35 +1,45 @@
 import os
 import nextcord
 from nextcord.ext import commands
-from nextcord import Interaction, ButtonStyle, SlashOption, SelectOption
+from nextcord import Interaction, ButtonStyle, SlashOption, SelectOption, Embed, Member, Message
 from nextcord.ui import Button, View, Select
 import uuid
 import logging
+from typing import Optional
 
 # Configurer le logging
 logging.basicConfig(level=logging.INFO)
+
+MY_GUILD = nextcord.Object(id=123456789012345678)  # Remplacez par l'ID de votre serveur
+
+class MyClient(nextcord.Client):
+    def __init__(self, *, intents: nextcord.Intents):
+        super().__init__(intents=intents)
+        self.tree = nextcord.app_commands.CommandTree(self)
+
+    async def setup_hook(self):
+        self.tree.copy_global_to(guild=MY_GUILD)
+        await self.tree.sync(guild=MY_GUILD)
+
 
 intents = nextcord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+client = MyClient(intents=intents)
 
 # Dictionary to store event information
 events = {}
 
-@bot.event
+@client.event
 async def on_ready():
-    logging.info(f'We have logged in as {bot.user}')
-    try:
-        synced = await bot.tree.sync()
-        logging.info(f"Synced {len(synced)} commands")
-    except Exception as e:
-        logging.error(f"Failed to sync commands: {e}")
+    logging.info(f'We have logged in as {client.user} (ID: {client.user.id})')
+    logging.info('------')
+
 
 class CreateEventSelect(Select):
-    def __init__(self, ctx, options):
-        self.ctx = ctx
+    def __init__(self, interaction: Interaction, options):
+        self.interaction = interaction
         self.channel_id = None
         super().__init__(placeholder="Sélectionnez un canal...", min_values=1, max_values=1, options=options)
 
@@ -38,11 +48,13 @@ class CreateEventSelect(Select):
         await interaction.response.send_message("Canal sélectionné.", ephemeral=True)
         self.view.stop()
 
+
 class CreateEventView(View):
-    def __init__(self, ctx, options):
+    def __init__(self, interaction: Interaction, options):
         super().__init__()
-        self.ctx = ctx
-        self.add_item(CreateEventSelect(ctx, options))
+        self.interaction = interaction
+        self.add_item(CreateEventSelect(interaction, options))
+
 
 class RegisterButton(Button):
     def __init__(self, event_id):
@@ -66,7 +78,7 @@ class RegisterButton(Button):
             await interaction.followup.send("Vous vous êtes inscrit à l'événement!", ephemeral=True)
 
             # Mettre à jour l'embed avec les participants
-            channel = bot.get_channel(event['channel_id'])
+            channel = client.get_channel(event['channel_id'])
             message = await channel.fetch_message(event['message_id'])
 
             embed = message.embeds[0]
@@ -74,6 +86,7 @@ class RegisterButton(Button):
             embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
             await message.edit(embed=embed)
         logging.info(f"{interaction.user.name} registered for event {self.event_id}")
+
 
 class UnregisterButton(Button):
     def __init__(self, event_id):
@@ -97,7 +110,7 @@ class UnregisterButton(Button):
             await interaction.followup.send("Votre inscription a été annulée.", ephemeral=True)
 
             # Mettre à jour l'embed avec les participants
-            channel = bot.get_channel(event['channel_id'])
+            channel = client.get_channel(event['channel_id'])
             message = await channel.fetch_message(event['message_id'])
 
             embed = message.embeds[0]
@@ -106,7 +119,8 @@ class UnregisterButton(Button):
             await message.edit(embed=embed)
         logging.info(f"{interaction.user.name} unregistered from event {self.event_id}")
 
-@bot.tree.command(name="create_event", description="Créer un nouvel événement")
+
+@client.tree.command(name="create_event", description="Créer un nouvel événement")
 async def create_event(interaction: Interaction):
     logging.info(f"Creating event command invoked by {interaction.user.name}")
     
@@ -116,16 +130,16 @@ async def create_event(interaction: Interaction):
         return m.author == interaction.user and isinstance(m.channel, nextcord.DMChannel)
 
     await interaction.user.send("Entrez le titre de l'événement:")
-    title = (await bot.wait_for('message', check=check)).content
+    title = (await client.wait_for('message', check=check)).content
 
     await interaction.user.send("Entrez la description de l'événement:")
-    description = (await bot.wait_for('message', check=check)).content
+    description = (await client.wait_for('message', check=check)).content
 
     await interaction.user.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
-    date = (await bot.wait_for('message', check=check)).content
+    date = (await client.wait_for('message', check=check)).content
 
     await interaction.user.send("Entrez l'heure de l'événement (format: HH:MM):")
-    time = (await bot.wait_for('message', check=check)).content
+    time = (await client.wait_for('message', check=check)).content
 
     # Get list of channels
     guild = interaction.guild
@@ -158,7 +172,7 @@ async def create_event(interaction: Interaction):
     logging.info(f"Event {event_id} created by {interaction.user.name}")
 
     # Send event to the selected channel
-    channel = bot.get_channel(channel_id)
+    channel = client.get_channel(channel_id)
     embed = nextcord.Embed(title=title, description=description, color=0x00ff00)
     embed.add_field(name="Date", value=date, inline=True)
     embed.add_field(name="Heure", value=time, inline=True)
@@ -172,8 +186,9 @@ async def create_event(interaction: Interaction):
     events[event_id]['message_id'] = message.id
     logging.info(f"Event {event_id} announced in channel {channel_id}")
 
-@bot.tree.command(name="modify_event", description="Modifier un événement existant")
-async def modify_event(interaction: Interaction, event_id: str = SlashOption(name="event_id", description="ID de l'événement", required=True, autocomplete=True)):
+
+@client.tree.command(name="modify_event", description="Modifier un événement existant")
+async def modify_event(interaction: Interaction, event_id: str):
     logging.info(f"Modifying event {event_id} command invoked by {interaction.user.name}")
     event = events.get(event_id)
     if not event:
@@ -190,22 +205,22 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
         return m.author == interaction.user and isinstance(m.channel, nextcord.DMChannel)
 
     await interaction.user.send("Entrez le nouveau titre de l'événement (ou laissez vide pour ne pas changer):")
-    new_title = (await bot.wait_for('message', check=check)).content
+    new_title = (await client.wait_for('message', check=check)).content
     if new_title:
         event['title'] = new_title
 
     await interaction.user.send("Entrez la nouvelle description de l'événement (ou laissez vide pour ne pas changer):")
-    new_description = (await bot.wait_for('message', check=check)).content
+    new_description = (await client.wait_for('message', check=check)).content
     if new_description:
         event['description'] = new_description
 
     await interaction.user.send("Entrez la nouvelle date de l'événement (format: JJ/MM/AAAA) (ou laissez vide pour ne pas changer):")
-    new_date = (await bot.wait_for('message', check=check)).content
+    new_date = (await client.wait_for('message', check=check)).content
     if new_date:
         event['date'] = new_date
 
     await interaction.user.send("Entrez la nouvelle heure de l'événement (format: HH:MM) (ou laissez vide pour ne pas changer):")
-    new_time = (await bot.wait_for('message', check=check)).content
+    new_time = (await client.wait_for('message', check=check)).content
     if new_time:
         event['time'] = new_time
 
@@ -213,7 +228,7 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
     logging.info(f"Event {event_id} modified by {interaction.user.name}")
 
     # Update the event embed in the channel
-    channel = bot.get_channel(event['channel_id'])
+    channel = client.get_channel(event['channel_id'])
     message = await channel.fetch_message(event['message_id'])
 
     embed = message.embeds[0]
@@ -224,6 +239,7 @@ async def modify_event(interaction: Interaction, event_id: str = SlashOption(nam
     await message.edit(embed=embed)
     logging.info(f"Event {event_id} embed updated in channel {event['channel_id']}")
 
+
 @modify_event.autocomplete("event_id")
 async def autocomplete_event_id(interaction: Interaction, value: str):
     choices = [
@@ -232,5 +248,5 @@ async def autocomplete_event_id(interaction: Interaction, value: str):
     ]
     await interaction.response.send_autocomplete(choices)
 
-token = os.getenv('DISCORD_TOKEN')
-bot.run(token)
+
+client.run(os.getenv('DISCORD_TOKEN'))
