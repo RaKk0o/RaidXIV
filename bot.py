@@ -248,11 +248,25 @@ async def create_event(interaction: discord.Interaction):
     await interaction.user.send("Entrez la description de l'événement:")
     description = (await bot.wait_for('message', check=check)).content
 
-    await interaction.user.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
-    date = (await bot.wait_for('message', check=check)).content
+# Validate date
+    while True:
+        await interaction.user.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
+        date_str = (await bot.wait_for('message', check=check)).content
+        try:
+            date = datetime.strptime(date_str, '%d/%m/%Y').date()
+            break
+        except ValueError:
+            await interaction.user.send("Date invalide. Veuillez entrer une date au format JJ/MM/AAAA.")
 
-    await interaction.user.send("Entrez l'heure de l'événement (format: HH:MM):")
-    time = (await bot.wait_for('message', check=check)).content
+    # Validate time
+    while True:
+        await interaction.user.send("Entrez l'heure de l'événement (format: HH:MM):")
+        time_str = (await bot.wait_for('message', check=check)).content
+        try:
+            time = datetime.strptime(time_str, '%H:%M').time()
+            break
+        except ValueError:
+            await interaction.user.send("Heure invalide. Veuillez entrer une heure au format HH:MM.")
 
     guild = interaction.guild
     channels = guild.text_channels
@@ -334,14 +348,22 @@ async def edit_event(interaction: discord.Interaction, event_id: str):
         event['description'] = new_description
 
     await interaction.user.send("Entrez la nouvelle date de l'événement (format: JJ/MM/AAAA) (ou laissez vide pour ne pas changer):")
-    new_date = (await bot.wait_for('message', check=check)).content
-    if new_date:
-        event['date'] = new_date
+    new_date_str = (await bot.wait_for('message', check=check)).content
+    if new_date_str:
+        try:
+            new_date = datetime.strptime(new_date_str, '%d/%m/%Y').date()
+            event['date'] = new_date_str
+        except ValueError:
+            await interaction.user.send("Date invalide. Veuillez entrer une date au format JJ/MM/AAAA.")
 
     await interaction.user.send("Entrez la nouvelle heure de l'événement (format: HH:MM) (ou laissez vide pour ne pas changer):")
-    new_time = (await bot.wait_for('message', check=check)).content
-    if new_time:
-        event['time'] = new_time
+    new_time_str = (await bot.wait_for('message', check=check)).content
+    if new_time_str:
+        try:
+            new_time = datetime.strptime(new_time_str, '%H:%M').time()
+            event['time'] = new_time_str
+        except ValueError:
+            await interaction.user.send("Heure invalide. Veuillez entrer une heure au format HH:MM.")
 
     await interaction.user.send("L'événement a été modifié avec succès!")
 
