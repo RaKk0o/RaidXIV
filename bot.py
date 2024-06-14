@@ -6,7 +6,7 @@ from discord.ui import Button, View, Select
 import uuid
 import logging
 
-# Configurer le logging
+# Logging
 logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.default()
@@ -88,7 +88,7 @@ class PresenceButton(Button):
 
 class AbsenceButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.secondary, label="Absence", custom_id=f"absence_{event_id}")
+        super().__init__(style=discord.ButtonStyle.red, label="Absence", custom_id=f"absence_{event_id}")
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
@@ -297,7 +297,6 @@ async def create_event(interaction: discord.Interaction):
 
     view = View()
     view.add_item(PresenceButton(event_id))
-    view.add_item(UnregisterButton(event_id))
     view.add_item(AbsenceButton(event_id))
     view.add_item(MaybeButton(event_id))
     view.add_item(ReplacementButton(event_id))
