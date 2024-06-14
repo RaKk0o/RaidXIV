@@ -1,8 +1,7 @@
 import discord
 from discord.ui import Button
 from utils.helpers import update_event_message
-
-events = {}
+from shared import events
 
 class PresenceButton(Button):
     def __init__(self, event_id):

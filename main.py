@@ -1,7 +1,6 @@
 import os
 import discord
 from discord.ext import commands
-from discord import app_commands
 import logging
 from commands.create_event import create_event_command
 from commands.edit_event import edit_event_command
@@ -14,9 +13,6 @@ intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
-
-# Dictionary to store event information
-events = {}
 
 @bot.event
 async def on_ready():

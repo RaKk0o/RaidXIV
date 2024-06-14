@@ -1,14 +1,12 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
 from discord.ui import Button, View, Select
 from datetime import datetime
 import uuid
 import logging
 from utils.helpers import validate_date, validate_time, CreateEventSelect, CreateEventView
 from .buttons import PresenceButton, AbsenceButton, MaybeButton, ReplacementButton
-
-events = {}
+from shared import events
 
 async def create_event(interaction: discord.Interaction):
     if isinstance(interaction.channel, discord.DMChannel):

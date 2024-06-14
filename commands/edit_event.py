@@ -2,8 +2,7 @@ import discord
 from discord import app_commands
 from datetime import datetime
 import logging
-
-events = {}
+from shared import events
 
 async def edit_event(interaction: discord.Interaction, event_id: str):
     event = events.get(event_id)
