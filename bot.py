@@ -68,8 +68,8 @@ class PresenceButton(Button):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
-        embed.add_field(name="Date", value=event['date'], inline=True)
-        embed.add_field(name="Heure", value=event['time'], inline=True)
+        embed.add_field(name="📅 Date", value=event['date'], inline=True)
+        embed.add_field(name="⏰ Heure", value=event['time'], inline=True)
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
@@ -116,8 +116,8 @@ class AbsenceButton(Button):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
-        embed.add_field(name="Date", value=event['date'], inline=True)
-        embed.add_field(name="Heure", value=event['time'], inline=True)
+        embed.add_field(name="📅 Date", value=event['date'], inline=True)
+        embed.add_field(name="⏰ Heure", value=event['time'], inline=True)
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
@@ -164,8 +164,8 @@ class MaybeButton(Button):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
-        embed.add_field(name="Date", value=event['date'], inline=True)
-        embed.add_field(name="Heure", value=event['time'], inline=True)
+        embed.add_field(name="📅 Date", value=event['date'], inline=True)
+        embed.add_field(name="⏰ Heure", value=event['time'], inline=True)
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
@@ -212,8 +212,8 @@ class ReplacementButton(Button):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
         embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
-        embed.add_field(name="Date", value=event['date'], inline=True)
-        embed.add_field(name="Heure", value=event['time'], inline=True)
+        embed.add_field(name="📅 Date", value=event['date'], inline=True)
+        embed.add_field(name="⏰ Heure", value=event['time'], inline=True)
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
@@ -288,8 +288,8 @@ async def create_event(interaction: discord.Interaction):
 
     channel = bot.get_channel(channel_id)
     embed = discord.Embed(title=title, description=description, color=0x00ff00)
-    embed.add_field(name="Date", value=date, inline=True)
-    embed.add_field(name="Heure", value=time, inline=True)
+    embed.add_field(name="📅 Date", value=date, inline=True)
+    embed.add_field(name="⏰ Heure", value=time, inline=True)
     embed.add_field(name="Inscriptions", value="Aucun pour le moment.", inline=False)
     embed.add_field(name="Absences", value="Aucun pour le moment.", inline=False)
     embed.add_field(name="Peut-être", value="Aucun pour le moment.", inline=False)
@@ -349,8 +349,8 @@ async def edit_event(interaction: discord.Interaction, event_id: str):
     message = await channel.fetch_message(event['message_id'])
 
     embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
-    embed.add_field(name="Date", value=event['date'], inline=True)
-    embed.add_field(name="Heure", value=event['time'], inline=True)
+    embed.add_field(name="📅 Date", value=event['date'], inline=True)
+    embed.add_field(name="⏰ Heure", value=event['time'], inline=True)
 
     if event['participants']:
         participants = ', '.join([p.name for p in event['participants']])
