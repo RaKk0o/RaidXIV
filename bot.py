@@ -243,21 +243,38 @@ async def create_event(interaction: discord.Interaction):
     def check(m):
         return m.author == interaction.user and isinstance(m.channel, discord.DMChannel)
 
-    await interaction.user.send("Entrez le titre de l'événement:")
-    title = (await bot.wait_for('message', check=check)).content
+    await ctx.send(embed=discord.Embed(title="Saisissez un titre pour cet événement.", color=0x3498db))
 
-    await interaction.user.send("Entrez la description de l'événement:")
-    description = (await bot.wait_for('message', check=check)).content
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
+
+    title_msg = await bot.wait_for('message', check=check)
+    title = title_msg.content
+
+    await ctx.send(embed=discord.Embed(title="Saisissez une description pour cet événement.", color=0x3498db))
+
+    desc_msg = await bot.wait_for('message', check=check)
+    description = desc_msg.content
 
 # Validate date
     while True:
-        await interaction.user.send("Entrez la date de l'événement (format: JJ/MM/AAAA):")
-        date_str = (await bot.wait_for('message', check=check)).content
+        await ctx.send(embed=discord.Embed(
+        title="Entrez la date de cet événement.",
+        description="Format: dd-MM-yyyy\nExemple: 24-11-2022",
+        color=0x3498db
+        ))
+
+        date_msg = await bot.wait_for('message', check=check)
+        event_date = date_msg.content
         try:
             date = datetime.strptime(date_str, '%d/%m/%Y').date()
             break
         except ValueError:
-            await interaction.user.send("Date invalide. Veuillez entrer une date au format JJ/MM/AAAA.")
+            await ctx.send(embed=discord.Embed(
+            title="Date invalide. Veuillez entrer une date au bon format.",
+            description="Format: dd-MM-yyyy\nExemple: 24-11-2022",
+            color=0x3498db
+            ))
 
     # Validate time
     while True:
