@@ -4,6 +4,8 @@ from datetime import datetime
 import logging
 from shared import events
 
+@app_commands.command(name="edit_event", description="Éditer un événement")
+@app_commands.describe(event_id="L'identifiant de l'événement à modifier")
 async def edit_event(interaction: discord.Interaction, event_id: str):
     event = events.get(event_id)
     if not event:
@@ -73,13 +75,7 @@ async def edit_event(interaction: discord.Interaction, event_id: str):
     await message.edit(embed=embed)
     await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
 
-edit_event_command = app_commands.Command(
-    name="edit_event",
-    description="Éditer un événement",
-    callback=edit_event
-)
-
-@edit_event_command.autocomplete("event_id")
+@edit_event.autocomplete("event_id")
 async def edit_event_autocomplete(
     interaction: discord.Interaction,
     current: str,
@@ -91,3 +87,9 @@ async def edit_event_autocomplete(
     ]
     logging.info(f"Choices generated: {choices}")
     return choices
+
+edit_event_command = app_commands.Command(
+    name="edit_event",
+    description="Éditer un événement",
+    callback=edit_event
+)
