@@ -40,7 +40,7 @@ class CreateEventView(View):
 
 class PresenceButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.green, label="Présence", custom_id=f"presence_{event_id}")
+        super().__init__(style=discord.ButtonStyle.green, label="Présence", custom_id=f"presence_{event_id}",emoji="✅")
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
@@ -88,7 +88,7 @@ class PresenceButton(Button):
 
 class AbsenceButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.red, label="Absence", custom_id=f"absence_{event_id}")
+        super().__init__(style=discord.ButtonStyle.red, label="Absence", custom_id=f"absence_{event_id}",emoji="❌")
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
@@ -136,7 +136,7 @@ class AbsenceButton(Button):
 
 class MaybeButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.secondary, label="🤔 Peut-être", custom_id=f"maybe_{event_id}")
+        super().__init__(style=discord.ButtonStyle.secondary, label="Peut-être", custom_id=f"maybe_{event_id}", emoji="🤔")
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
@@ -184,7 +184,7 @@ class MaybeButton(Button):
 
 class ReplacementButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.secondary, label="Remplacement", custom_id=f"replacement_{event_id}")
+        super().__init__(style=discord.ButtonStyle.secondary, label="Remplacement", custom_id=f"replacement_{event_id}", emoji="🔄")
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
