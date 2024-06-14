@@ -6,6 +6,7 @@ from discord.ui import Button, View, Select
 import uuid
 import logging
 
+# Configurer le logging
 logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.default()
@@ -66,17 +67,23 @@ class PresenceButton(Button):
     async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
-        embed = message.embeds[0]
+        embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
+        embed.add_field(name="Date", value=event['date'], inline=True)
+        embed.add_field(name="Heure", value=event['time'], inline=True)
 
-        participants = ', '.join([p.name for p in event['participants']])
-        absences = ', '.join([p.name for p in event['absences']])
-        maybes = ', '.join([p.name for p in event['maybes']])
-        replacements = ', '.join([p.name for p in event['replacements']])
+        if event['participants']:
+            participants = ', '.join([p.name for p in event['participants']])
+            embed.add_field(name="Inscriptions", value=participants, inline=False)
+        if event['absences']:
+            absences = ', '.join([p.name for p in event['absences']])
+            embed.add_field(name="Absences", value=absences, inline=False)
+        if event['maybes']:
+            maybes = ', '.join([p.name for p in event['maybes']])
+            embed.add_field(name="Peut-être", value=maybes, inline=False)
+        if event['replacements']:
+            replacements = ', '.join([p.name for p in event['replacements']])
+            embed.add_field(name="Remplacements", value=replacements, inline=False)
 
-        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
-        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
 
 class AbsenceButton(Button):
@@ -108,17 +115,23 @@ class AbsenceButton(Button):
     async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
-        embed = message.embeds[0]
+        embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
+        embed.add_field(name="Date", value=event['date'], inline=True)
+        embed.add_field(name="Heure", value=event['time'], inline=True)
 
-        participants = ', '.join([p.name for p in event['participants']])
-        absences = ', '.join([p.name for p in event['absences']])
-        maybes = ', '.join([p.name for p in event['maybes']])
-        replacements = ', '.join([p.name for p in event['replacements']])
+        if event['participants']:
+            participants = ', '.join([p.name for p in event['participants']])
+            embed.add_field(name="Inscriptions", value=participants, inline=False)
+        if event['absences']:
+            absences = ', '.join([p.name for p in event['absences']])
+            embed.add_field(name="Absences", value=absences, inline=False)
+        if event['maybes']:
+            maybes = ', '.join([p.name for p in event['maybes']])
+            embed.add_field(name="Peut-être", value=maybes, inline=False)
+        if event['replacements']:
+            replacements = ', '.join([p.name for p in event['replacements']])
+            embed.add_field(name="Remplacements", value=replacements, inline=False)
 
-        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
-        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
 
 class MaybeButton(Button):
@@ -150,19 +163,24 @@ class MaybeButton(Button):
     async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
-        embed = message.embeds[0]
+        embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
+        embed.add_field(name="Date", value=event['date'], inline=True)
+        embed.add_field(name="Heure", value=event['time'], inline=True)
 
-        participants = ', '.join([p.name for p in event['participants']])
-        absences = ', '.join([p.name for p in event['absences']])
-        maybes = ', '.join([p.name for p in event['maybes']])
-        replacements = ', '.join([p.name for p in event['replacements']])
+        if event['participants']:
+            participants = ', '.join([p.name for p in event['participants']])
+            embed.add_field(name="Inscriptions", value=participants, inline=False)
+        if event['absences']:
+            absences = ', '.join([p.name for p in event['absences']])
+            embed.add_field(name="Absences", value=absences, inline=False)
+        if event['maybes']:
+            maybes = ', '.join([p.name for p in event['maybes']])
+            embed.add_field(name="Peut-être", value=maybes, inline=False)
+        if event['replacements']:
+            replacements = ', '.join([p.name for p in event['replacements']])
+            embed.add_field(name="Remplacements", value=replacements, inline=False)
 
-        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
-        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
-
 
 class ReplacementButton(Button):
     def __init__(self, event_id):
@@ -193,54 +211,24 @@ class ReplacementButton(Button):
     async def update_event_message(self, event):
         channel = bot.get_channel(event['channel_id'])
         message = await channel.fetch_message(event['message_id'])
-        embed = message.embeds[0]
+        embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
+        embed.add_field(name="Date", value=event['date'], inline=True)
+        embed.add_field(name="Heure", value=event['time'], inline=True)
 
-        participants = ', '.join([p.name for p in event['participants']])
-        absences = ', '.join([p.name for p in event['absences']])
-        maybes = ', '.join([p.name for p in event['maybes']])
-        replacements = ', '.join([p.name for p in event['replacements']])
+        if event['participants']:
+            participants = ', '.join([p.name for p in event['participants']])
+            embed.add_field(name="Inscriptions", value=participants, inline=False)
+        if event['absences']:
+            absences = ', '.join([p.name for p in event['absences']])
+            embed.add_field(name="Absences", value=absences, inline=False)
+        if event['maybes']:
+            maybes = ', '.join([p.name for p in event['maybes']])
+            embed.add_field(name="Peut-être", value=maybes, inline=False)
+        if event['replacements']:
+            replacements = ', '.join([p.name for p in event['replacements']])
+            embed.add_field(name="Remplacements", value=replacements, inline=False)
 
-        embed.set_field_at(2, name="Inscriptions", value=participants, inline=False)
-        embed.set_field_at(3, name="Absences", value=absences if absences else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(4, name="Peut-être", value=maybes if maybes else "Aucun pour le moment.", inline=False)
-        embed.set_field_at(5, name="Remplacements", value=replacements if replacements else "Aucun pour le moment.", inline=False)
         await message.edit(embed=embed)
-
-
-class UnregisterButton(Button):
-    def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.red, label="Se désinscrire", custom_id=f"unregister_{event_id}")
-        self.event_id = event_id
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
-        await self.handle_unregistration(interaction)
-
-    async def handle_unregistration(self, interaction):
-        event = events.get(self.event_id)
-        if not event:
-            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
-            return
-
-        user = interaction.user
-        if user not in event['participants']:
-            await interaction.followup.send("Vous n'êtes pas inscrit à cet événement.", ephemeral=True)
-        else:
-            event['participants'].remove(user)
-            await interaction.followup.send("Votre inscription a été annulée.", ephemeral=True)
-            await self.update_event_message(event)
-
-    async def update_event_message(self, event):
-        channel = bot.get_channel(event['channel_id'])
-        message = await channel.fetch_message(event['message_id'])
-        embed = message.embeds[0]
-        participants = ', '.join([p.name for p in event['participants']])
-        embed.set_field_at(2, name="Inscriptions", value=participants if participants else "Aucun pour le moment.", inline=False)
-        await message.edit(embed=embed)
-
-##########################################################
-# Create Event
-##########################################################
 
 @bot.tree.command(name="create_event", description="Créer un nouvel événement")
 async def create_event(interaction: discord.Interaction):
@@ -307,8 +295,6 @@ async def create_event(interaction: discord.Interaction):
     embed.add_field(name="Peut-être", value="Aucun pour le moment.", inline=False)
     embed.add_field(name="Remplacements", value="Aucun pour le moment.", inline=False)
 
-
-
     view = View()
     view.add_item(PresenceButton(event_id))
     view.add_item(UnregisterButton(event_id))
@@ -319,10 +305,6 @@ async def create_event(interaction: discord.Interaction):
     message = await channel.send(embed=embed, view=view)
     events[event_id]['message_id'] = message.id
     await interaction.followup.send("L'événement a été annoncé dans le canal sélectionné.", ephemeral=True)
-
-##########################################################
-# Edit Event
-##########################################################
 
 @bot.tree.command(name="edit_event", description="Éditer un événement")
 @app_commands.describe(event_id="L'identifiant de l'événement à modifier")
@@ -367,11 +349,23 @@ async def edit_event(interaction: discord.Interaction, event_id: str):
     channel = bot.get_channel(event['channel_id'])
     message = await channel.fetch_message(event['message_id'])
 
-    embed = message.embeds[0]
-    embed.title = event['title']
-    embed.description = event['description']
-    embed.set_field_at(0, name="Date", value=event['date'], inline=True)
-    embed.set_field_at(1, name="Heure", value=event['time'], inline=True)
+    embed = discord.Embed(title=event['title'], description=event['description'], color=0x00ff00)
+    embed.add_field(name="Date", value=event['date'], inline=True)
+    embed.add_field(name="Heure", value=event['time'], inline=True)
+
+    if event['participants']:
+        participants = ', '.join([p.name for p in event['participants']])
+        embed.add_field(name="Inscriptions", value=participants, inline=False)
+    if event['absences']:
+        absences = ', '.join([p.name for p in event['absences']])
+        embed.add_field(name="Absences", value=absences, inline=False)
+    if event['maybes']:
+        maybes = ', '.join([p.name for p in event['maybes']])
+        embed.add_field(name="Peut-être", value=maybes, inline=False)
+    if event['replacements']:
+        replacements = ', '.join([p.name for p in event['replacements']])
+        embed.add_field(name="Remplacements", value=replacements, inline=False)
+
     await message.edit(embed=embed)
     await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
 
