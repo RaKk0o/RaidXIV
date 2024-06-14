@@ -73,16 +73,16 @@ class PresenceButton(Button):
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
-            embed.add_field(name="Inscriptions", value=participants, inline=False)
+            embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event['absences']:
             absences = ', '.join([p.name for p in event['absences']])
-            embed.add_field(name="Absences", value=absences, inline=False)
+            embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event['maybes']:
             maybes = ', '.join([p.name for p in event['maybes']])
-            embed.add_field(name="Peut-être", value=maybes, inline=False)
+            embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event['replacements']:
             replacements = ', '.join([p.name for p in event['replacements']])
-            embed.add_field(name="Remplacements", value=replacements, inline=False)
+            embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
 
@@ -121,22 +121,22 @@ class AbsenceButton(Button):
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
-            embed.add_field(name="Inscriptions", value=participants, inline=False)
+            embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event['absences']:
             absences = ', '.join([p.name for p in event['absences']])
-            embed.add_field(name="Absences", value=absences, inline=False)
+            embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event['maybes']:
             maybes = ', '.join([p.name for p in event['maybes']])
-            embed.add_field(name="Peut-être", value=maybes, inline=False)
+            embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event['replacements']:
             replacements = ', '.join([p.name for p in event['replacements']])
-            embed.add_field(name="Remplacements", value=replacements, inline=False)
+            embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
 
 class MaybeButton(Button):
     def __init__(self, event_id):
-        super().__init__(style=discord.ButtonStyle.secondary, label="Peut-être", custom_id=f"maybe_{event_id}")
+        super().__init__(style=discord.ButtonStyle.secondary, label="🤔 Peut-être", custom_id=f"maybe_{event_id}")
         self.event_id = event_id
 
     async def callback(self, interaction: discord.Interaction):
@@ -169,16 +169,16 @@ class MaybeButton(Button):
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
-            embed.add_field(name="Inscriptions", value=participants, inline=False)
+            embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event['absences']:
             absences = ', '.join([p.name for p in event['absences']])
-            embed.add_field(name="Absences", value=absences, inline=False)
+            embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event['maybes']:
             maybes = ', '.join([p.name for p in event['maybes']])
-            embed.add_field(name="Peut-être", value=maybes, inline=False)
+            embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event['replacements']:
             replacements = ', '.join([p.name for p in event['replacements']])
-            embed.add_field(name="Remplacements", value=replacements, inline=False)
+            embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
 
@@ -217,16 +217,16 @@ class ReplacementButton(Button):
 
         if event['participants']:
             participants = ', '.join([p.name for p in event['participants']])
-            embed.add_field(name="Inscriptions", value=participants, inline=False)
+            embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event['absences']:
             absences = ', '.join([p.name for p in event['absences']])
-            embed.add_field(name="Absences", value=absences, inline=False)
+            embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event['maybes']:
             maybes = ', '.join([p.name for p in event['maybes']])
-            embed.add_field(name="Peut-être", value=maybes, inline=False)
+            embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event['replacements']:
             replacements = ', '.join([p.name for p in event['replacements']])
-            embed.add_field(name="Remplacements", value=replacements, inline=False)
+            embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
 
@@ -290,10 +290,10 @@ async def create_event(interaction: discord.Interaction):
     embed = discord.Embed(title=title, description=description, color=0x00ff00)
     embed.add_field(name="📅 Date", value=date, inline=True)
     embed.add_field(name="⏰ Heure", value=time, inline=True)
-    embed.add_field(name="Inscriptions", value="Aucun pour le moment.", inline=False)
-    embed.add_field(name="Absences", value="Aucun pour le moment.", inline=False)
-    embed.add_field(name="Peut-être", value="Aucun pour le moment.", inline=False)
-    embed.add_field(name="Remplacements", value="Aucun pour le moment.", inline=False)
+    embed.add_field(name="✅ Inscrits", value="Aucun pour le moment.", inline=False)
+    embed.add_field(name="❌ Absents", value="Aucun pour le moment.", inline=False)
+    embed.add_field(name="🤔 Peut-être", value="Aucun pour le moment.", inline=False)
+    embed.add_field(name="🔄 Remplaçants", value="Aucun pour le moment.", inline=False)
 
     view = View()
     view.add_item(PresenceButton(event_id))
@@ -354,16 +354,16 @@ async def edit_event(interaction: discord.Interaction, event_id: str):
 
     if event['participants']:
         participants = ', '.join([p.name for p in event['participants']])
-        embed.add_field(name="Inscriptions", value=participants, inline=False)
+        embed.add_field(name="✅ Inscrits", value=participants, inline=False)
     if event['absences']:
         absences = ', '.join([p.name for p in event['absences']])
-        embed.add_field(name="Absences", value=absences, inline=False)
+        embed.add_field(name="❌ Absents", value=absences, inline=False)
     if event['maybes']:
         maybes = ', '.join([p.name for p in event['maybes']])
-        embed.add_field(name="Peut-être", value=maybes, inline=False)
+        embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
     if event['replacements']:
         replacements = ', '.join([p.name for p in event['replacements']])
-        embed.add_field(name="Remplacements", value=replacements, inline=False)
+        embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
     await message.edit(embed=embed)
     await interaction.followup.send("L'événement a été modifié avec succès.", ephemeral=True)
