@@ -1,3 +1,4 @@
+import discord
 from discord.ui import Select, View
 from event_buttons import PresenceButton, AbsenceButton, MaybeButton, ReplacementButton
 
