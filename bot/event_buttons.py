@@ -2,6 +2,13 @@ import discord
 from discord.ui import Button, View
 from bot_config import events, bot
 from event_views import RoleSelectView, ClassSelectView
+import os
+
+def get_class_icon(cls):
+    icon_path = f"../media/job_icons/{cls.replace(' ', '')}.png"
+    if os.path.exists(icon_path):
+        return icon_path
+    return None
 
 class PresenceButton(Button):
     def __init__(self, event_id):
@@ -21,7 +28,7 @@ class PresenceButton(Button):
         role_select_view = RoleSelectView()
         await interaction.user.send("Sélectionnez votre rôle:", view=role_select_view)
         await role_select_view.wait()
-        
+
         if not role_select_view.children[0].role:
             await interaction.user.send("Aucun rôle sélectionné, opération annulée.")
             return
@@ -31,7 +38,7 @@ class PresenceButton(Button):
         class_select_view = ClassSelectView(role)
         await interaction.user.send("Sélectionnez votre classe:", view=class_select_view)
         await class_select_view.wait()
-        
+
         if not class_select_view.children[0].cls:
             await interaction.user.send("Aucune classe sélectionnée, opération annulée.")
             return
@@ -67,20 +74,35 @@ class PresenceButton(Button):
         embed.add_field(name="📅 Date", value=event["date"], inline=True)
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
+        roles_summary = {"Tank": 0, "DPS Melee": 0, "DPS Range": 0, "DPS Magical": 0, "Heal": 0}
+
+        # Compter les rôles et préparer les champs pour l'embed
+        for role in roles_summary.keys():
+            role_users = [f"{get_class_icon_tag(cls)} {p.name}" for p, r, cls in event["participants"] if r == role]
+            if role_users:
+                embed.add_field(name=f"{role} ({len(role_users)})", value="\n".join(role_users), inline=False)
+
         if event["participants"]:
-            participants = ", ".join([f"{role} {cls} {p.name}" for p, role, cls in event["participants"]])
+            participants = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
-            absences = ", ".join([p.name for p in event["absences"]])
+            absences = "\n".join([p.name for p in event["absences"]])
             embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event["maybes"]:
-            maybes = ", ".join([p.name for p in event["maybes"]])
+            maybes = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["maybes"]])
             embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event["replacements"]:
-            replacements = ", ".join([p.name for p in event["replacements"]])
+            replacements = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["replacements"]])
             embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
+
+def get_class_icon_tag(cls):
+    icon_path = get_class_icon(cls)
+    if icon_path:
+        return f"![{cls}](attachment://{icon_path})"
+    return cls
+
 
 class AbsenceButton(Button):
     def __init__(self, event_id):
@@ -123,20 +145,35 @@ class AbsenceButton(Button):
         embed.add_field(name="📅 Date", value=event["date"], inline=True)
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
+        roles_summary = {"Tank": 0, "DPS Melee": 0, "DPS Range": 0, "DPS Magical": 0, "Heal": 0}
+
+        # Compter les rôles et préparer les champs pour l'embed
+        for role in roles_summary.keys():
+            role_users = [f"{get_class_icon_tag(cls)} {p.name}" for p, r, cls in event["participants"] if r == role]
+            if role_users:
+                embed.add_field(name=f"{role} ({len(role_users)})", value="\n".join(role_users), inline=False)
+
         if event["participants"]:
-            participants = ", ".join([f"{cls} {p.name}" for p, role, cls in event["participants"]])
+            participants = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
-            absences = ", ".join([p.name for p in event["absences"]])
+            absences = "\n".join([p.name for p in event["absences"]])
             embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event["maybes"]:
-            maybes = ", ".join([p.name for p in event["maybes"]])
+            maybes = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["maybes"]])
             embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event["replacements"]:
-            replacements = ", ".join([p.name for p in event["replacements"]])
+            replacements = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["replacements"]])
             embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
+
+def get_class_icon_tag(cls):
+    icon_path = get_class_icon(cls)
+    if icon_path:
+        return f"![{cls}](attachment://{icon_path})"
+    return cls
+
 
 class MaybeButton(Button):
     def __init__(self, event_id):
@@ -202,22 +239,34 @@ class MaybeButton(Button):
         embed.add_field(name="📅 Date", value=event["date"], inline=True)
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
+        roles_summary = {"Tank": 0, "DPS Melee": 0, "DPS Range": 0, "DPS Magical": 0, "Heal": 0}
+
+        # Compter les rôles et préparer les champs pour l'embed
+        for role in roles_summary.keys():
+            role_users = [f"{get_class_icon_tag(cls)} {p.name}" for p, r, cls in event["participants"] if r == role]
+            if role_users:
+                embed.add_field(name=f"{role} ({len(role_users)})", value="\n".join(role_users), inline=False)
+
         if event["participants"]:
-            participants = ", ".join([f"{cls} {p.name}" for p, role, cls in event["participants"]])
+            participants = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
-            absences = ", ".join([p.name for p in event["absences"]])
+            absences = "\n".join([p.name for p in event["absences"]])
             embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event["maybes"]:
-            maybes = ", ".join([f"{cls} {p.name}" for p, role, cls in event["maybes"]])
+            maybes = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["maybes"]])
             embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event["replacements"]:
-            replacements = ", ".join([p.name for p in event["replacements"]])
+            replacements = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["replacements"]])
             embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
 
-
+def get_class_icon_tag(cls):
+    icon_path = get_class_icon(cls)
+    if icon_path:
+        return f"![{cls}](attachment://{icon_path})"
+    return cls
 
 class ReplacementButton(Button):
     def __init__(self, event_id):
@@ -283,17 +332,31 @@ class ReplacementButton(Button):
         embed.add_field(name="📅 Date", value=event["date"], inline=True)
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
+        roles_summary = {"Tank": 0, "DPS Melee": 0, "DPS Range": 0, "DPS Magical": 0, "Heal": 0}
+
+        # Compter les rôles et préparer les champs pour l'embed
+        for role in roles_summary.keys():
+            role_users = [f"{get_class_icon_tag(cls)} {p.name}" for p, r, cls in event["participants"] if r == role]
+            if role_users:
+                embed.add_field(name=f"{role} ({len(role_users)})", value="\n".join(role_users), inline=False)
+
         if event["participants"]:
-            participants = ", ".join([f"{cls} {p.name}" for p, role, cls in event["participants"]])
+            participants = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
-            absences = ", ".join([p.name for p in event["absences"]])
+            absences = "\n".join([p.name for p in event["absences"]])
             embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event["maybes"]:
-            maybes = ", ".join([f"{cls} {p.name}" for p, role, cls in event["maybes"]])
+            maybes = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["maybes"]])
             embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event["replacements"]:
-            replacements = ", ".join([f"{cls} {p.name}" for p, role, cls in event["replacements"]])
+            replacements = "\n".join([f"{get_class_icon_tag(cls)} {p.name}" for p, role, cls in event["replacements"]])
             embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
+
+def get_class_icon_tag(cls):
+    icon_path = get_class_icon(cls)
+    if icon_path:
+        return f"![{cls}](attachment://{icon_path})"
+    return cls
