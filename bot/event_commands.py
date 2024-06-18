@@ -4,6 +4,7 @@ from datetime import datetime
 import uuid
 from bot_config import bot, events
 from event_views import CreateEventView
+from discord.ui import View
 from event_buttons import PresenceButton, AbsenceButton, MaybeButton, ReplacementButton
 
 @bot.tree.command(name="create_event", description="Créer un nouvel événement")
