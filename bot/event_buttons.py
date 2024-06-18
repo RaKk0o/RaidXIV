@@ -1,6 +1,7 @@
 import discord
-from discord.ui import Button
+from discord.ui import Button, View
 from bot_config import events, bot
+from event_views import RoleSelectView, ClassSelectView
 
 class PresenceButton(Button):
     def __init__(self, event_id):
@@ -14,9 +15,32 @@ class PresenceButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        await self.handle_presence(interaction)
+        await self.select_role_and_class(interaction)
 
-    async def handle_presence(self, interaction):
+    async def select_role_and_class(self, interaction):
+        role_select_view = RoleSelectView()
+        await interaction.user.send("Sélectionnez votre rôle:", view=role_select_view)
+        await role_select_view.wait()
+        
+        if not role_select_view.children[0].role:
+            await interaction.user.send("Aucun rôle sélectionné, opération annulée.")
+            return
+
+        role = role_select_view.children[0].role
+
+        class_select_view = ClassSelectView(role)
+        await interaction.user.send("Sélectionnez votre classe:", view=class_select_view)
+        await class_select_view.wait()
+        
+        if not class_select_view.children[0].cls:
+            await interaction.user.send("Aucune classe sélectionnée, opération annulée.")
+            return
+
+        cls = class_select_view.children[0].cls
+
+        await self.handle_presence(interaction, role, cls)
+
+    async def handle_presence(self, interaction, role, cls):
         event = events.get(self.event_id)
         if not event:
             await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
@@ -28,11 +52,8 @@ class PresenceButton(Button):
         event["absences"].remove(user) if user in event["absences"] else None
         event["maybes"].remove(user) if user in event["maybes"] else None
         event["replacements"].remove(user) if user in event["replacements"] else None
-        (
-            event["participants"].append(user)
-            if user not in event["participants"]
-            else None
-        )
+        if user not in event["participants"]:
+            event["participants"].append((user, role, cls))
 
         await interaction.followup.send("Votre présence a été enregistrée.", ephemeral=True)
         await self.update_event_message(event)
@@ -47,7 +68,7 @@ class PresenceButton(Button):
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
         if event["participants"]:
-            participants = ", ".join([p.name for p in event["participants"]])
+            participants = ", ".join([f"{role} {cls} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
             absences = ", ".join([p.name for p in event["absences"]])
@@ -78,9 +99,7 @@ class AbsenceButton(Button):
     async def handle_absence(self, interaction):
         event = events.get(self.event_id)
         if not event:
-            await interaction.followup.send(
-                "Cet événement n'existe pas.", ephemeral=True
-            )
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
             return
 
         user = interaction.user
@@ -89,11 +108,10 @@ class AbsenceButton(Button):
         event["participants"].remove(user) if user in event["participants"] else None
         event["maybes"].remove(user) if user in event["maybes"] else None
         event["replacements"].remove(user) if user in event["replacements"] else None
-        event["absences"].append(user) if user not in event["absences"] else None
+        if user not in event["absences"]:
+            event["absences"].append(user)
 
-        await interaction.followup.send(
-            "Votre absence a été enregistrée.", ephemeral=True
-        )
+        await interaction.followup.send("Votre absence a été enregistrée.", ephemeral=True)
         await self.update_event_message(event)
 
     async def update_event_message(self, event):
@@ -106,7 +124,7 @@ class AbsenceButton(Button):
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
         if event["participants"]:
-            participants = ", ".join([p.name for p in event["participants"]])
+            participants = ", ".join([f"{cls} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
             absences = ", ".join([p.name for p in event["absences"]])
@@ -119,7 +137,6 @@ class AbsenceButton(Button):
             embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
-
 
 class MaybeButton(Button):
     def __init__(self, event_id):
@@ -133,14 +150,35 @@ class MaybeButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        await self.handle_maybe(interaction)
+        await self.select_role_and_class(interaction)
 
-    async def handle_maybe(self, interaction):
+    async def select_role_and_class(self, interaction):
+        role_select_view = RoleSelectView()
+        await interaction.user.send("Sélectionnez votre rôle:", view=role_select_view)
+        await role_select_view.wait()
+
+        if not role_select_view.children[0].role:
+            await interaction.user.send("Aucun rôle sélectionné, opération annulée.")
+            return
+
+        role = role_select_view.children[0].role
+
+        class_select_view = ClassSelectView(role)
+        await interaction.user.send("Sélectionnez votre classe:", view=class_select_view)
+        await class_select_view.wait()
+
+        if not class_select_view.children[0].cls:
+            await interaction.user.send("Aucune classe sélectionnée, opération annulée.")
+            return
+
+        cls = class_select_view.children[0].cls
+
+        await self.handle_maybe(interaction, role, cls)
+
+    async def handle_maybe(self, interaction, role, cls):
         event = events.get(self.event_id)
         if not event:
-            await interaction.followup.send(
-                "Cet événement n'existe pas.", ephemeral=True
-            )
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
             return
 
         user = interaction.user
@@ -149,11 +187,10 @@ class MaybeButton(Button):
         event["participants"].remove(user) if user in event["participants"] else None
         event["absences"].remove(user) if user in event["absences"] else None
         event["replacements"].remove(user) if user in event["replacements"] else None
-        event["maybes"].append(user) if user not in event["maybes"] else None
+        if user not in event["maybes"]:
+            event["maybes"].append((user, role, cls))
 
-        await interaction.followup.send(
-            "Votre réponse 'peut-être' a été enregistrée.", ephemeral=True
-        )
+        await interaction.followup.send("Votre réponse 'peut-être' a été enregistrée.", ephemeral=True)
         await self.update_event_message(event)
 
     async def update_event_message(self, event):
@@ -166,19 +203,20 @@ class MaybeButton(Button):
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
         if event["participants"]:
-            participants = ", ".join([p.name for p in event["participants"]])
+            participants = ", ".join([f"{cls} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
             absences = ", ".join([p.name for p in event["absences"]])
             embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event["maybes"]:
-            maybes = ", ".join([p.name for p in event["maybes"]])
+            maybes = ", ".join([f"{cls} {p.name}" for p, role, cls in event["maybes"]])
             embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event["replacements"]:
             replacements = ", ".join([p.name for p in event["replacements"]])
             embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
+
 
 
 class ReplacementButton(Button):
@@ -193,14 +231,35 @@ class ReplacementButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        await self.handle_replacement(interaction)
+        await self.select_role_and_class(interaction)
 
-    async def handle_replacement(self, interaction):
+    async def select_role_and_class(self, interaction):
+        role_select_view = RoleSelectView()
+        await interaction.user.send("Sélectionnez votre rôle:", view=role_select_view)
+        await role_select_view.wait()
+
+        if not role_select_view.children[0].role:
+            await interaction.user.send("Aucun rôle sélectionné, opération annulée.")
+            return
+
+        role = role_select_view.children[0].role
+
+        class_select_view = ClassSelectView(role)
+        await interaction.user.send("Sélectionnez votre classe:", view=class_select_view)
+        await class_select_view.wait()
+
+        if not class_select_view.children[0].cls:
+            await interaction.user.send("Aucune classe sélectionnée, opération annulée.")
+            return
+
+        cls = class_select_view.children[0].cls
+
+        await self.handle_replacement(interaction, role, cls)
+
+    async def handle_replacement(self, interaction, role, cls):
         event = events.get(self.event_id)
         if not event:
-            await interaction.followup.send(
-                "Cet événement n'existe pas.", ephemeral=True
-            )
+            await interaction.followup.send("Cet événement n'existe pas.", ephemeral=True)
             return
 
         user = interaction.user
@@ -209,15 +268,10 @@ class ReplacementButton(Button):
         event["participants"].remove(user) if user in event["participants"] else None
         event["absences"].remove(user) if user in event["absences"] else None
         event["maybes"].remove(user) if user in event["maybes"] else None
-        (
-            event["replacements"].append(user)
-            if user not in event["replacements"]
-            else None
-        )
+        if user not in event["replacements"]:
+            event["replacements"].append((user, role, cls))
 
-        await interaction.followup.send(
-            "Votre disponibilité comme remplacement a été enregistrée.", ephemeral=True
-        )
+        await interaction.followup.send("Votre disponibilité comme remplacement a été enregistrée.", ephemeral=True)
         await self.update_event_message(event)
 
     async def update_event_message(self, event):
@@ -230,16 +284,16 @@ class ReplacementButton(Button):
         embed.add_field(name="⏰ Heure", value=event["time"], inline=True)
 
         if event["participants"]:
-            participants = ", ".join([p.name for p in event["participants"]])
+            participants = ", ".join([f"{cls} {p.name}" for p, role, cls in event["participants"]])
             embed.add_field(name="✅ Inscrits", value=participants, inline=False)
         if event["absences"]:
             absences = ", ".join([p.name for p in event["absences"]])
             embed.add_field(name="❌ Absents", value=absences, inline=False)
         if event["maybes"]:
-            maybes = ", ".join([p.name for p in event["maybes"]])
+            maybes = ", ".join([f"{cls} {p.name}" for p, role, cls in event["maybes"]])
             embed.add_field(name="🤔 Peut-être", value=maybes, inline=False)
         if event["replacements"]:
-            replacements = ", ".join([p.name for p in event["replacements"]])
+            replacements = ", ".join([f"{cls} {p.name}" for p, role, cls in event["replacements"]])
             embed.add_field(name="🔄 Remplaçants", value=replacements, inline=False)
 
         await message.edit(embed=embed)
