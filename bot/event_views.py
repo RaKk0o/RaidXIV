@@ -2,12 +2,12 @@ import discord
 from discord.ui import Select, View
 
 role_classes = {
-    "DPS Melee": ["Monk", "Dragoon", "Ninja", "Samurai", "Reaper"],
-    "DPS Range": ["Bard", "Machinist", "Dancer"],
-    "DPS Magical": ["Black Mage", "Summoner", "Red Mage", "Blue Mage"],
-    "Tank": ["Paladin", "Warrior", "Dark Knight", "Gunbreaker"],
-    "Heal": ["White Mage", "Scholar", "Astrologian", "Sage"],
-    "Allrounder": []
+    "Melee": ["Monk", "Dragoon", "Ninja", "Samurai", "Reaper", "Viper"],
+    "Range": ["Bard", "Machinist", "Dancer"],
+    "Magical": ["BlackMage", "Summoner", "RedMage", "BlueMage", "Pictomancer"],
+    "Tank": ["Paladin", "Warrior", "DarkKnight", "Gunbreaker"],
+    "Healer": ["WhiteMage", "Scholar", "Astrologian", "Sage"],
+    "AllRounder": []
 }
 
 class CreateEventSelect(Select):
